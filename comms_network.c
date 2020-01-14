@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file    wi_network.c
+ * @file    comms_network.c
  * @author  Aditya Mall,
  * @brief   (6314) wireless network type source file
  *
@@ -49,7 +49,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "wi_network.h"
+#include "comms_network.h"
 #include "network_protocol_configs.h"
 
 
@@ -79,13 +79,13 @@ typedef struct wi_network_header
 
 struct sync_packet
 {
-    char        preamble[WI_NET_PREAMBLE_LENGTH];  /*!< */
+    char        preamble[COMMS_NET_PREAMBLE_LENGTH];  /*!< */
     wi_header_t fixed_header;                      /*!< */
     uint16_t    network_id;                        /*!< */
     uint8_t     message_slot_number;               /*!< */
     uint16_t    slot_time;                         /*!< */
     uint8_t     access_slot;                       /*!< */
-    char        payload[WI_NET_PAYLOAD_LENGTH];    /*!< */
+    char        payload[COMMS_NET_PAYLOAD_LENGTH];    /*!< */
 
 };
 
@@ -99,7 +99,7 @@ struct sync_packet
  * @param  size   : Length of message
  * @retval int8_t : Error value
  ********************************************************/
-int8_t wi_network_checksum(char *data, uint8_t offset, uint8_t size)
+int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size)
 {
     int8_t i = 0;
     uint8_t checksum = 0;
@@ -169,7 +169,7 @@ int8_t get_sync_data(device_config_t *client_device, char *message_payload ,acce
  * @param  network          : network handle structure
  * @retval int8_t           : error: 0, success: length of message
  ***********************************************************************/
-uint8_t wi_network_sync_message(access_control_t *network, uint16_t network_id, uint16_t slot_time, char *payload)
+uint8_t comms_network_sync_message(access_control_t *network, uint16_t network_id, uint16_t slot_time, char *payload)
 {
     uint8_t func_retval    = 0;
     uint8_t payload_length = 0;
@@ -221,7 +221,7 @@ uint8_t wi_network_sync_message(access_control_t *network, uint16_t network_id, 
             message_length = network->sync_message->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
 
             /* Calculate checksum */
-            network->sync_message->fixed_header.message_checksum = wi_network_checksum((char*)network->sync_message, 5 ,message_length);
+            network->sync_message->fixed_header.message_checksum = comms_network_checksum((char*)network->sync_message, 5 ,message_length);
 
             func_retval = message_length;
 
@@ -231,3 +231,28 @@ uint8_t wi_network_sync_message(access_control_t *network, uint16_t network_id, 
     return func_retval;
 }
 
+
+
+
+
+
+int8_t comms_send(access_control_t *network, const char *message_buffer, uint8_t message_length)
+{
+    int8_t  func_retval   = 0;
+    int8_t  send_retval   = 0;
+
+    if(message_buffer == NULL || message_length == 0)
+    {
+        func_retval = -4;
+    }
+    else
+    {
+        send_retval = network->net_ops->send_message(message_buffer, message_length);
+        if(send_retval < 0)
+            func_retval = -4;
+        else
+            func_retval = message_length;
+    }
+
+    return func_retval;
+}

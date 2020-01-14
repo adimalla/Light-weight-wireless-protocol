@@ -74,6 +74,8 @@ typedef enum device_return_codes
     JOINRESP_FUNC_ERROR      = -5, /*!< */
     STATUSACK_FUNC_ERROR     = -6, /*!< */
     CONTRL_FUNC_ERROR        = -7, /*!< */
+    JOINRESP_STATUS_ERROR    = -8, /*!< */
+    STATUSMSG_RECV_ERROR     =- 9,
 
 }device_codes_t;
 
@@ -116,7 +118,7 @@ int8_t static comms_checksum(char *data, uint8_t offset, uint8_t size)
 
 /******************************************************************************/
 /*                                                                            */
-/*                              API Functions                                 */
+/*                              API Functions (Client)                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -446,21 +448,31 @@ int8_t comms_get_contrl_data(char *message_buffer, uint8_t* source_client_id, pr
 
 
 
+/******************************************************************************/
+/*                                                                            */
+/*                              API Functions (Sever)                         */
+/*                                                                            */
+/******************************************************************************/
 
 
 
-
-
-uint8_t comms_set_joinresp_message_status(protocol_handle_t *server, int8_t status_value)
+/*******************************************************************
+ * @brief  Function to set JOINRESP message status
+ * @param  server       : reference to the protocol handle structure
+ * @param  status_value : Join response status value
+ * @retval int8_t       : error: -8, success: 0
+ *******************************************************************/
+int8_t comms_set_joinresp_message_status(protocol_handle_t *server, int8_t status_value)
 {
-    uint8_t func_retval = 0;
+    int8_t func_retval = 0;
 
     if(server == NULL)
     {
-        func_retval = 0;
+        func_retval = JOINRESP_STATUS_ERROR;
     }
     else
     {
+        /*TODO !! if else redundant here, will be changed later */
         if(status_value == -2)
         {
             server->joinresponse_msg->fixed_header.message_status = JOINRESP_NACK;
@@ -482,7 +494,14 @@ uint8_t comms_set_joinresp_message_status(protocol_handle_t *server, int8_t stat
 
 
 
-
+/***********************************************************************************
+ * @brief  Function to configure JOINRESP message
+ * @param  *server         : reference to the protocol handle
+ * @param  device_server   : server protocol handle structure
+ * @param  destination_mac : destination mac address
+ * @param  client_id       : destination client id, new id given to the client
+ * @retval uint8_t         : error 0, success: length of message
+ ***********************************************************************************/
 uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device_server, char *destination_mac, int8_t client_id)
 {
 
@@ -545,23 +564,28 @@ uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device
 
 
 
-
-
+/****************************************************************************************
+ * @brief  Function to get STATUS Message from client
+ * @param  message_buffer         : message data from status message
+ * @param  *source_client_id      : reference to client/device id of source device
+ * @param  *destination_client_id : reference to client/device id of destination device
+ * @param  device                 : reference to the client protocol handle structure
+ * @retval int8_t                 : error: -9, success: length of status message payload
+ ****************************************************************************************/
 int8_t comms_get_status_message(char *client_payload, uint8_t *source_client_id, uint8_t *destination_client_id, protocol_handle_t device)
 {
     int8_t func_retval            = 0;
     uint8_t status_payload_length = 0;
 
 
-    /*1-3 slots are reserved can't be taken by any device */
+    /* 1-3 slots are reserved can't be taken by any device */
     if(device.status_msg->message_slot_number <= 3)
     {
         *destination_client_id = 0;
-        func_retval = -2;
+        func_retval = STATUSMSG_RECV_ERROR;
     }
     else
     {
-
         status_payload_length = strlen(device.status_msg->payload);
 
         /* get source client id*/
@@ -572,11 +596,86 @@ int8_t comms_get_status_message(char *client_payload, uint8_t *source_client_id,
 
         /* get payload data from client, get rid of the terminator */
         strncpy(client_payload, device.status_msg->payload, status_payload_length - COMMS_TERMINATOR_LENGTH);
+
+        func_retval = status_payload_length;
     }
 
 
     return func_retval;
 }
+
+
+
+
+
+
+/****************************************************************************************
+ * @brief  Function to configure CONTRL message
+ * @param  *server                : reference to the server protocol handle
+ * @param  device                 : reference to the client protocol handle structure
+ * @param  *source_client_id      : reference to client/device id of source device
+ * @param  *destination_client_id : reference to client/device id of destination device
+ * @param  payload                : CONTRL message payload
+ * @retval int8_t                 : error: 0, success: length of CONTRL message payload
+ ****************************************************************************************/
+uint8_t comms_control_message(protocol_handle_t *server, device_config_t device, uint8_t source_id, uint8_t destination_id, const char *payload)
+{
+    uint8_t func_retval    = 0;
+    uint8_t payload_length = 0;
+    uint8_t payload_index  = 0;
+    uint8_t message_length = 0;
+
+    payload_length = strlen(payload);
+
+    server->contrl_msg->preamble[0] = (PREAMBLE_CONTRL >> 8) & 0xFF;
+    server->contrl_msg->preamble[1] = (PREAMBLE_CONTRL >> 0) & 0xFF;
+
+
+    if(destination_id == source_id)
+    {
+        server->contrl_msg->fixed_header.message_status = CLIENT_ECHO;
+    }
+    else
+    {
+        server->contrl_msg->fixed_header.message_status = MESSSAGE_OK;
+    }
+
+
+    server->contrl_msg->fixed_header.message_type = COMMS_CONTRL_MESSAGE;
+
+    server->contrl_msg->network_id = device.device_network_id;
+    server->contrl_msg->message_slot_number = device.device_slot_number;
+
+    server->contrl_msg->source_client_id      = source_id;
+    server->contrl_msg->destination_client_id = destination_id;
+
+    /* add payload */
+    strncpy(server->contrl_msg->payload, payload, payload_length);
+
+    /* add message terminator */
+    payload_index = payload_length;
+
+    strncpy(server->contrl_msg->payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
+
+
+    /* Calculate remaining message length */
+    server->contrl_msg->fixed_header.message_length = COMMS_NETWORK_ID_SIZE + COMMS_SLOTNUM_SIZE + COMMS_SOURCE_DEVICEID_SIZE + \
+            COMMS_DESTINATION_DEVICEID_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
+
+    /* calculate total message length  */
+    message_length = server->contrl_msg->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
+
+    /* Get Checksum */
+    server->contrl_msg->fixed_header.message_checksum = comms_checksum((char*)server->contrl_msg, 5, message_length);
+
+
+    func_retval = message_length;
+
+
+    return func_retval;
+}
+
+
 
 
 
@@ -591,7 +690,7 @@ int8_t comms_statusack_message(protocol_handle_t *client, device_config_t device
 
 
     /* Handle parameter error */
-    if(client == NULL )
+    if(client == NULL)
     {
         func_retval = 0;
 
@@ -638,64 +737,3 @@ int8_t comms_statusack_message(protocol_handle_t *client, device_config_t device
 
     return func_retval;
 }
-
-
-
-
-uint8_t comms_control_message(protocol_handle_t *server, device_config_t device, uint8_t source_id, uint8_t destination_id, const char *payload)
-{
-    uint8_t func_retval    = 0;
-    uint8_t payload_length = 0;
-    uint8_t payload_index  = 0;
-    uint8_t message_length = 0;
-
-    payload_length = strlen(payload);
-
-    server->contrl_msg->preamble[0] = (PREAMBLE_CONTRL >> 8) & 0xFF;
-    server->contrl_msg->preamble[1] = (PREAMBLE_CONTRL >> 0) & 0xFF;
-
-
-    if(destination_id == source_id)
-    {
-        server->contrl_msg->fixed_header.message_status = CLIENT_ECHO;
-    }
-    else
-    {
-        server->contrl_msg->fixed_header.message_status = MESSSAGE_OK;
-    }
-
-
-    server->contrl_msg->fixed_header.message_type   = COMMS_CONTRL_MESSAGE;
-
-    server->contrl_msg->network_id = device.device_network_id;
-    server->contrl_msg->message_slot_number = device.device_slot_number;
-
-    server->contrl_msg->source_client_id      = source_id;
-    server->contrl_msg->destination_client_id = destination_id;
-
-    /* add payload */
-    strncpy(server->contrl_msg->payload, payload, payload_length);
-
-    /* add message terminator */
-    payload_index = payload_length;
-
-    strncpy(server->contrl_msg->payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
-
-
-    /* Calculate remaining message length */
-    server->contrl_msg->fixed_header.message_length = COMMS_NETWORK_ID_SIZE + COMMS_SLOTNUM_SIZE + COMMS_SOURCE_DEVICEID_SIZE + \
-            COMMS_DESTINATION_DEVICEID_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
-
-    /* calculate total message length  */
-    message_length = server->contrl_msg->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
-
-    /* Get Checksum */
-    server->contrl_msg->fixed_header.message_checksum = comms_checksum((char*)server->contrl_msg, 5, message_length);
-
-
-    func_retval = message_length;
-
-
-    return func_retval;
-}
-

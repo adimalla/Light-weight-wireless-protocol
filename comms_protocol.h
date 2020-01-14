@@ -54,7 +54,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "wi_network.h"
+#include "comms_network.h"
 
 
 /******************************************************************************/
@@ -69,7 +69,7 @@
 
 #define PREAMBLE_LENGTH 2
 #define PAYLOAD_LENGTH  20
-#define COMMS_MESSAGE_BUFFER_SIZE 32
+
 
 #define COMMS_SYNC_MESSAGE       1
 #define COMMS_JOINREQ_MESSAGE    2
@@ -108,7 +108,6 @@ typedef enum comms_message_status_codes
 
 
 /* Wireless Network Protocol Messages*/
-
 
 
 typedef struct comms_header
@@ -228,51 +227,12 @@ typedef struct wi_net_protocol_handle
 
 
 
-typedef enum message_flags
-{
-    CLEAR_FLAG        = 0,
-    SYNC_FLAG         = 1,
-    JOINREQ_FLAG      = 2,
-    JOINRESP_FLAG     = 3,
-    STATUSMSG_FLAG    = 4,
-    CONTRLMSG_FLAG    = 6,
-
-}message_flags_t;
-
-
-typedef struct application_flags
-{
-    uint8_t network_join_request      : 1;
-    uint8_t network_join_response     : 1;
-    uint8_t network_joined_state      : 1;
-    uint8_t application_message_ready : 1;
-    uint8_t network_message_ready     : 1;
-
-}application_flags_t;
-
-
-typedef struct comms_network_buffer
-{
-    char receive_message[COMMS_MESSAGE_BUFFER_SIZE];
-    char read_message[COMMS_MESSAGE_BUFFER_SIZE];
-
-    application_flags_t application_data;
-
-    char application_message[COMMS_MESSAGE_BUFFER_SIZE];
-    char network_message[COMMS_MESSAGE_BUFFER_SIZE];
-
-    message_flags_t flag_state;
-
-}comms_network_buffer_t;
-
-
-
 
 
 
 /******************************************************************************/
 /*                                                                            */
-/*                       API Function Prototypes                              */
+/*                    API Function Prototypes (Client)                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -351,22 +311,67 @@ int8_t comms_get_contrl_data(char *message_buffer, uint8_t *source_client_id, pr
 
 
 
-uint8_t comms_set_joinresp_message_status(protocol_handle_t *server, int8_t status_value);
 
+/******************************************************************************/
+/*                                                                            */
+/*                    API Function Prototypes (Server)                        */
+/*                                                                            */
+/******************************************************************************/
+
+
+
+/*******************************************************************
+ * @brief  Function to set JOINRESP message status
+ * @param  server       : reference to the protocol handle structure
+ * @param  status_value : Join response status value
+ * @retval int8_t       : error: -8, success: 0
+ *******************************************************************/
+int8_t comms_set_joinresp_message_status(protocol_handle_t *server, int8_t status_value);
+
+
+
+
+/***********************************************************************************
+ * @brief  Function to configure JOINRESP message
+ * @param  *server         : reference to the protocol handle
+ * @param  device_server   : server device structure
+ * @param  destination_mac : destination mac address
+ * @param  client_id       : destination client id, new id given to the client
+ * @retval uint8_t         : error 0, success: length of message
+ ***********************************************************************s***********/
 uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device_server, char *destination_mac, int8_t client_id);
 
+
+
+
+/****************************************************************************************
+ * @brief  Function to get STATUS Message from client
+ * @param  message_buffer         : message data from status message
+ * @param  *source_client_id      : pointer to client/device id of source device
+ * @param  *destination_client_id : pointer to client/device id of destination device
+ * @param  device                 : reference to the client protocol handle structure
+ * @retval int8_t                 : error: -9, success: length of status message payload
+ ****************************************************************************************/
 int8_t comms_get_status_message(char *client_payload, uint8_t *source_client_id, uint8_t *destination_client_id, protocol_handle_t client);
 
-/*
- * client_id : client id value from table
- */
-int8_t comms_statusack_message(protocol_handle_t *client, device_config_t device, int8_t client_id, uint8_t destination_client_id);
 
+
+
+/****************************************************************************************
+ * @brief  Function to configure CONTRL message
+ * @param  *server                : reference to the server protocol handle
+ * @param  device                 : reference to the client protocol handle structure
+ * @param  *source_client_id      : reference to client/device id of source device
+ * @param  *destination_client_id : reference to client/device id of destination device
+ * @param  payload                : CONTRL message payload
+ * @retval int8_t                 : error: 0, success: length of CONTRL message payload
+ ****************************************************************************************/
 uint8_t comms_control_message(protocol_handle_t *server, device_config_t device, uint8_t source_id, uint8_t destination_id, const char *payload);
 
 
 
 
+int8_t comms_statusack_message(protocol_handle_t *client, device_config_t device, int8_t client_id, uint8_t destination_client_id);
 
 
 

@@ -13,8 +13,10 @@
 #include "gpio_tm4c123gh6pm.h"
 #include "uart_tm4c123gh6pm.h"
 
+#include "xbee_driver.h"
+
 #include "network_protocol_configs.h"
-#include "wi_network.h"
+#include "comms_network.h"
 #include "comms_protocol.h"
 
 
@@ -45,13 +47,6 @@
 #define ONBOARD_PUSH_BUTTON       PF4
 
 
-/* Peripheral config defines */
-#define COMMS_GPIO   GPIOC
-#define COMMS_UART   UART1
-
-#define COMMS_RX     4
-#define COMMS_TX     5
-
 
 
 typedef enum fsm_state_values
@@ -69,7 +64,6 @@ typedef enum fsm_state_values
     EXIT_STATE         = 9
 
 }fsm_states_t;
-
 
 
 
@@ -128,49 +122,7 @@ void init_board_io(void)
 
 
 
-void init_comm(void)
-{
 
-    gpio_handle_t xbee_io;
-    uart_handle_t xbee;
-
-    /* xBee takes PC4 to DOUT pin (pin 2) and PC5 to DIN/CONFIG pin (pin 3), see XBee Pinout diagram */
-
-    /* Configure GPIO ports for UART */
-    xbee_io.p_gpio_x = COMMS_GPIO;
-    xbee_io.gpio_pin_config.pin_mode           = DIGITAL_ENABLE;             /*!<*/
-    xbee_io.gpio_pin_config.alternate_function = ALTERNATE_FUNCTION_ENABLE;  /*!<*/
-
-    xbee_io.gpio_pin_config.pin_number         = COMMS_RX;                   /*!<*/
-    xbee_io.gpio_pin_config.pctl_val           = UART1RX_PC4;                /*!<*/
-
-    /* Enable GPIO PC4 configs */
-    gpio_init(&xbee_io);
-
-    xbee_io.gpio_pin_config.pin_number         = COMMS_TX;     /*!<*/
-    xbee_io.gpio_pin_config.pctl_val           = UART1TX_PC5;  /*!<*/
-
-    /* Enable GPIO PC5 configs */
-    gpio_init(&xbee_io);
-
-
-    /* Configure UART1 for PC4 and PC5 (RX, TX) */
-    xbee.p_uart_x                      = COMMS_UART;        /*!<*/
-    xbee.uart_config.uart_clock_source = CLOCK_SYSTEM;      /*!<*/
-    xbee.uart_config.uart_baudrate     = 115200;            /*!<*/
-    xbee.uart_config.word_length       = EIGHT_BITS;        /*!<*/
-    xbee.uart_config.uart_fifo         = FIFO_DISABLE;       /*!<*/
-    xbee.uart_config.stop_bits         = ONE_STOP_BIT;      /*!<*/
-    xbee.uart_config.uart_direction    = UART_TRANSCEIVER;  /*!<*/
-
-    /* Enable UART configs */
-    uart_init(&xbee);
-
-    /* Configure UART RX interrupt */
-    UART1->IM = (1 << 4);          /*!<*/
-    NVIC->EN0 |= 1 << UART1_IRQn;  /*!<*/
-
-}
 
 
 
@@ -212,19 +164,20 @@ void uart1ISR(void)
     static uint8_t rx_index = 0;
     uint8_t checksum = 0;
 
-    char c = UART1_DR_R & 0xFF;
+    char c = UART1->DR & 0xFF;
 
     buffer.receive_message[rx_index] = c;
 
     if(buffer.receive_message[rx_index] == 't' && buffer.receive_message[rx_index - 1] == '\r')
     {
 
+        /* Clear UART interrupt */
         UART1->ICR |= (1 << 4);
 
         server_device.packet_type = (void*)buffer.receive_message;
 
         /* Validate checksum */
-        checksum = wi_network_checksum((char*)buffer.receive_message, 5, rx_index + 1);
+        checksum = comms_network_checksum((char*)buffer.receive_message, 5, rx_index + 1);
 
         rx_index = 0;
 
@@ -297,7 +250,7 @@ typedef struct table_return_values
 }table_retval_t;
 
 
-
+/* -2 : JOINRESP_NACK, -3: JOINRESP_DUP */
 table_retval_t update_client_table(client_devices_t *device_table, protocol_handle_t *protocol_server, device_config_t *server)
 {
     table_retval_t return_value;
@@ -328,6 +281,7 @@ table_retval_t update_client_table(client_devices_t *device_table, protocol_hand
             {
                 found = 1;
 
+                /* Request for already present device */
                 return_value.table_retval = -3;
 
                 return_value.table_index = index;
@@ -363,6 +317,8 @@ table_retval_t update_client_table(client_devices_t *device_table, protocol_hand
 
                 /* return client ID */
                 return_value.table_index = index;
+
+                return_value.table_retval = 0;
 
                 break;
             }
@@ -400,7 +356,7 @@ int8_t read_client_table(char *client_mac_address, int8_t *client_id, client_dev
 
 
 
-int8_t calibrate_tx_timer(uint16_t device_slot_time, uint8_t device_slot_number)
+int8_t set_tx_timer(uint16_t device_slot_time, uint8_t device_slot_number)
 {
     int8_t func_retval;
 
@@ -438,7 +394,12 @@ void wTimer5Isr(void)
 
 
     /* WI Network related declarations */
-    access_control_t       slot_network;
+    access_control_t       wireless_netwok;
+
+    network_operations_t net_ops = {xbee_send};
+
+    wireless_netwok.net_ops = &net_ops;
+
     static device_config_t sync_gen;
     protocol_handle_t      device_server;
 
@@ -481,7 +442,7 @@ void wTimer5Isr(void)
         sync_gen.total_slots        = 4;
 
         /* calibrate timer */
-        calibrate_tx_timer(COMMS_SERVER_SLOT_TIME, sync_gen.total_slots);
+        set_tx_timer(COMMS_SERVER_SLOT_TIME, sync_gen.total_slots);
 
         fsm_state = SYNC_STATE;
 
@@ -520,17 +481,17 @@ void wTimer5Isr(void)
         ONBOARD_RED_LED    = 0;
         ONBOARD_GREEN_LED ^= 1;
 
-        slot_network.sync_message = (void*)message_buffer;
+        wireless_netwok.sync_message = (void*)message_buffer;
 
-        message_length = wi_network_sync_message(&slot_network, sync_gen.device_network_id, sync_gen.device_slot_time, "sync");
+        message_length = comms_network_sync_message(&wireless_netwok, sync_gen.device_network_id, sync_gen.device_slot_time, "sync");
 
-        uart_write(UART1, (char*)slot_network.sync_message, message_length);
+        comms_send(&wireless_netwok, (const char*)wireless_netwok.sync_message, message_length);
 
         fsm_state = MSG_READ_STATE;
 
         if(contrl_flag)
         {
-            //calibrate_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BRODCAST_SLOTNUM);
+            //set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BRODCAST_SLOTNUM);
 
             fsm_state = CONTROLMSG_STATE;
 
@@ -559,7 +520,7 @@ void wTimer5Isr(void)
             else
             {
                 /* calibrate timer to broadcast slot */
-                calibrate_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BRODCAST_SLOTNUM);
+                set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BRODCAST_SLOTNUM);
 
                 fsm_state = JOINRESP_STATE;
 
@@ -569,6 +530,7 @@ void wTimer5Isr(void)
         }
         else
         {
+            buffer.application_data.network_join_response = 0;
             fsm_state = SYNC_STATE;
         }
 
@@ -605,7 +567,7 @@ void wTimer5Isr(void)
         uart_write(UART1, (char*)device_server.joinresponse_msg, message_length);
 
         /* update timer to accommodate new slot */
-        calibrate_tx_timer(COMMS_SERVER_SLOT_TIME, sync_gen.total_slots);
+        set_tx_timer(COMMS_SERVER_SLOT_TIME, sync_gen.total_slots);
 
         fsm_state = SYNC_STATE;
 
@@ -629,7 +591,7 @@ void wTimer5Isr(void)
             if(destination_client_id == 1)
             {
                 /* calibrate timer to broadcast message */
-                calibrate_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BRODCAST_SLOTNUM);
+                set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BRODCAST_SLOTNUM);
 
                 fsm_state = CONTROLMSG_STATE;
 
@@ -640,7 +602,7 @@ void wTimer5Isr(void)
                 read_client_table(destination_mac_addr, &client_id, client_devices, destination_client_id - 4);
 
                 /* calibrate timer to broadcast message */
-                calibrate_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BRODCAST_SLOTNUM);
+                set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BRODCAST_SLOTNUM);
 
                 fsm_state = CONTROLMSG_STATE;
 
@@ -693,7 +655,7 @@ void wTimer5Isr(void)
 
         uart_write(UART1, (char*)device_server.contrl_msg, message_length);
 
-        calibrate_tx_timer(COMMS_SERVER_SLOT_TIME, sync_gen.total_slots);
+        set_tx_timer(COMMS_SERVER_SLOT_TIME, sync_gen.total_slots);
 
         memset(status_message_buffer, 0, sizeof(status_message_buffer));
 
@@ -732,7 +694,7 @@ int main(void)
 
     init_board_io();
 
-    init_comm();
+    init_xbee_comm();
 
     init_wide_timer_5();
 

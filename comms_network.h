@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file    wi_network.h
+ * @file    comms_network.h
  * @author  Aditya Mall,
  * @brief   (6314) wireless network type header file
  *
@@ -40,8 +40,8 @@
  */
 
 
-#ifndef WI_NETWORK_H_
-#define WI_NETWORK_H_
+#ifndef COMMS_NETWORK_H_
+#define COMMS_NETWORK_H_
 
 
 
@@ -61,10 +61,10 @@
 #pragma pack(1)
 
 
-#define WI_NET_PREAMBLE_LENGTH      2
-#define WI_NET_PAYLOAD_LENGTH       20
-#define WI_NET_MACADDR_LENGTH       6
-#define WI_NET_MESSAGE_BUFFER_SIZE  32
+#define COMMS_NET_PREAMBLE_LENGTH      2
+#define COMMS_NET_PAYLOAD_LENGTH       20
+#define COMMS_NET_MACADDR_LENGTH       6
+#define COMMS_NET_MESSAGE_BUFFER_SIZE  32
 
 
 /******************************************************************************/
@@ -81,26 +81,78 @@ typedef struct sync_packet sync_packet_t;
 /* */
 typedef struct device_config
 {
-    char      device_mac[WI_NET_MACADDR_LENGTH];  /*!< */
-    uint16_t  device_network_id;                  /*!< */
-    uint8_t   network_access_slot;                /*!< */
-    uint8_t   device_slot_number;                 /*!< */
-    uint16_t  device_slot_time;                   /*!< */
-    uint8_t   total_slots;                        /*!< */
-    uint8_t   network_joined;                     /*!< */
-    uint8_t   device_count;                       /*!< */
+    char      device_mac[COMMS_NET_MACADDR_LENGTH];  /*!< */
+    uint16_t  device_network_id;                     /*!< */
+    uint8_t   network_access_slot;                   /*!< */
+    uint8_t   device_slot_number;                    /*!< */
+    uint16_t  device_slot_time;                      /*!< */
+    uint8_t   total_slots;                           /*!< */
+    uint8_t   network_joined;                        /*!< */
+    uint8_t   device_count;                          /*!< */
 
 }device_config_t;
 
 
 
 
+typedef enum message_flags
+{
+    CLEAR_FLAG        = 0,
+    SYNC_FLAG         = 1,
+    JOINREQ_FLAG      = 2,
+    JOINRESP_FLAG     = 3,
+    STATUSMSG_FLAG    = 4,
+    CONTRLMSG_FLAG    = 6,
+
+}message_flags_t;
+
+
+
+
+typedef struct application_flags
+{
+    uint8_t network_join_request      : 1;
+    uint8_t network_join_response     : 1;
+    uint8_t network_joined_state      : 1;
+    uint8_t application_message_ready : 1;
+    uint8_t network_message_ready     : 1;
+
+}application_flags_t;
+
+
+
+
+typedef struct comms_network_buffer
+{
+    char receive_message[COMMS_NET_MESSAGE_BUFFER_SIZE];
+    char read_message[COMMS_NET_MESSAGE_BUFFER_SIZE];
+
+    application_flags_t application_data;
+
+    char application_message[COMMS_NET_MESSAGE_BUFFER_SIZE];
+    char network_message[COMMS_NET_MESSAGE_BUFFER_SIZE];
+
+    message_flags_t flag_state;
+
+
+}comms_network_buffer_t;
+
+
+
+typedef struct _network_operations
+{
+    int8_t (*send_message)(const char *message_buffer, uint8_t message_length);
+    int8_t (*recv_message)(char *message_buffer, uint8_t message_length);
+
+}network_operations_t;
 
 
 /* */
 typedef struct access_control
 {
     sync_packet_t  *sync_message;  /*!< */
+
+    network_operations_t *net_ops;
 
 }access_control_t;
 
@@ -122,18 +174,18 @@ typedef struct access_control
  * @param  size   : Length of message
  * @retval int8_t : Error value
  *********************************************************/
-int8_t wi_network_checksum(char *data, uint8_t offset, uint8_t size);
+int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size);
 
 
 
 
-/************************************************************************
+/*************************************************************************
  * @brief  Function to get sync message data
  * @param  *client_device   : reference to client device config structure
- * @param  *message_payload : message payload from syncmessage
+ * @param  *message_payload : message payload from syn cmessage
  * @param  network          : network handle structure
  * @retval int8_t           : error -1, success: 0
- ***********************************************************************/
+ ************************************************************************/
 int8_t get_sync_data(device_config_t *client_device, char *message_payload ,access_control_t network);
 
 
@@ -141,17 +193,17 @@ int8_t get_sync_data(device_config_t *client_device, char *message_payload ,acce
 
 /***********************************************************************
  * @brief  Function to configure sync message
- * @param  *client_device   : pointer to client device config structure
- * @param  *message_payload : message payload from syncmessage
+ * @param  *server_device   : reference to server device network handle
  * @param  network          : network handle structure
+ * @param  *message_payload : message payload from sync message
  * @retval int8_t           : error: 0, success: length of message
  ***********************************************************************/
-uint8_t wi_network_sync_message(access_control_t *server_device, uint16_t network_id, uint16_t slot_time, char *payload);
+uint8_t comms_network_sync_message(access_control_t *server_device, uint16_t network_id, uint16_t slot_time, char *payload);
 
 
 
+int8_t comms_send(access_control_t *network, const char *message_buffer, uint8_t message_length);
 
 
 
-
-#endif /* WI_NETWORK_H_ */
+#endif /* COMMS_NETWORK_H_ */
