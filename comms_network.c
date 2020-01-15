@@ -66,7 +66,7 @@
 /******************************************************************************/
 
 
-typedef struct wi_network_header
+typedef struct _wi_network_header
 {
     uint8_t message_status    : 4;  /*!< (LSB)*/
     uint8_t message_type      : 4;  /*!< (MSB)*/
@@ -77,17 +77,73 @@ typedef struct wi_network_header
 
 
 
-struct sync_packet
+struct _sync_packet
 {
     char        preamble[COMMS_NET_PREAMBLE_LENGTH];  /*!< */
-    wi_header_t fixed_header;                      /*!< */
-    uint16_t    network_id;                        /*!< */
-    uint8_t     message_slot_number;               /*!< */
-    uint16_t    slot_time;                         /*!< */
-    uint8_t     access_slot;                       /*!< */
+    wi_header_t fixed_header;                         /*!< */
+    uint16_t    network_id;                           /*!< */
+    uint8_t     message_slot_number;                  /*!< */
+    uint16_t    slot_time;                            /*!< */
+    uint8_t     access_slot;                          /*!< */
     char        payload[COMMS_NET_PAYLOAD_LENGTH];    /*!< */
 
 };
+
+
+
+
+/******************************************************************************/
+/*                                                                            */
+/*                    Network Structure API Functions                         */
+/*                                                                            */
+/******************************************************************************/
+
+
+
+access_control_t* create_network_obj(network_operations_t *network_ops)
+{
+    static access_control_t network;
+
+    network.network_commands = network_ops;
+
+    return &network;
+}
+
+
+
+
+
+/***********************************************************************
+ * @brief  Function to send sync message through network hardware
+ * @param  *network         : reference to network handle structure
+ * @param  *message_buffer  : message buffer to be send
+ * @param  message_length   : message_length
+ * @retval int8_t           : error: -4, success: length of message
+ ***********************************************************************/
+int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t message_length)
+{
+    int8_t  func_retval   = 0;
+    int8_t  send_retval   = 0;
+
+    if(message_buffer == NULL || message_length == 0)
+    {
+        func_retval = -4;
+    }
+    else
+    {
+        /* Add message terminator */
+        //strncpy(message_buffer + message_length, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
+
+        send_retval = network->network_commands->send_message(message_buffer, message_length);
+        if(send_retval < 0)
+            func_retval = -4;
+        else
+            func_retval = message_length;
+    }
+
+    return func_retval;
+}
+
 
 
 
@@ -117,7 +173,7 @@ int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size)
 
 /******************************************************************************/
 /*                                                                            */
-/*                              API Functions                                 */
+/*                        API Functions (Client)                              */
 /*                                                                            */
 /******************************************************************************/
 
@@ -158,6 +214,15 @@ int8_t get_sync_data(device_config_t *client_device, char *message_payload ,acce
 
     return func_retval;
 }
+
+
+
+
+/******************************************************************************/
+/*                                                                            */
+/*                        API Functions (Server)                              */
+/*                                                                            */
+/******************************************************************************/
 
 
 
@@ -213,7 +278,6 @@ uint8_t comms_network_sync_message(access_control_t *network, uint16_t network_i
             /* Add message terminator */
             strncpy(network->sync_message->payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
 
-
             /* Calculate remaining length */
             network->sync_message->fixed_header.message_length = COMMS_SLOTNUM_SIZE + COMMS_NETWORK_ID_SIZE + COMMS_ACCESS_SLOT_SIZE + \
                     COMMS_SLOT_TIME_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
@@ -221,7 +285,7 @@ uint8_t comms_network_sync_message(access_control_t *network, uint16_t network_i
             message_length = network->sync_message->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
 
             /* Calculate checksum */
-            network->sync_message->fixed_header.message_checksum = comms_network_checksum((char*)network->sync_message, 5 ,message_length);
+            network->sync_message->fixed_header.message_checksum = comms_network_checksum((char*)network->sync_message, 5 , message_length);
 
             func_retval = message_length;
 
@@ -232,27 +296,3 @@ uint8_t comms_network_sync_message(access_control_t *network, uint16_t network_i
 }
 
 
-
-
-
-
-int8_t comms_send(access_control_t *network, const char *message_buffer, uint8_t message_length)
-{
-    int8_t  func_retval   = 0;
-    int8_t  send_retval   = 0;
-
-    if(message_buffer == NULL || message_length == 0)
-    {
-        func_retval = -4;
-    }
-    else
-    {
-        send_retval = network->net_ops->send_message(message_buffer, message_length);
-        if(send_retval < 0)
-            func_retval = -4;
-        else
-            func_retval = message_length;
-    }
-
-    return func_retval;
-}

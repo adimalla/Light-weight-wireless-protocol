@@ -75,11 +75,11 @@
 
 
 /* Wireless network SYNC Message structure Declaration */
-typedef struct sync_packet sync_packet_t;
+typedef struct _sync_packet sync_packet_t;
 
 
 /* */
-typedef struct device_config
+typedef struct _device_config
 {
     char      device_mac[COMMS_NET_MACADDR_LENGTH];  /*!< */
     uint16_t  device_network_id;                     /*!< */
@@ -95,7 +95,7 @@ typedef struct device_config
 
 
 
-typedef enum message_flags
+typedef enum _message_flags
 {
     CLEAR_FLAG        = 0,
     SYNC_FLAG         = 1,
@@ -109,7 +109,7 @@ typedef enum message_flags
 
 
 
-typedef struct application_flags
+typedef struct _application_flags
 {
     uint8_t network_join_request      : 1;
     uint8_t network_join_response     : 1;
@@ -121,8 +121,7 @@ typedef struct application_flags
 
 
 
-
-typedef struct comms_network_buffer
+typedef struct _comms_network_buffer
 {
     char receive_message[COMMS_NET_MESSAGE_BUFFER_SIZE];
     char read_message[COMMS_NET_MESSAGE_BUFFER_SIZE];
@@ -141,18 +140,20 @@ typedef struct comms_network_buffer
 
 typedef struct _network_operations
 {
-    int8_t (*send_message)(const char *message_buffer, uint8_t message_length);
+    int8_t (*send_message)(char *message_buffer, uint8_t message_length);
     int8_t (*recv_message)(char *message_buffer, uint8_t message_length);
+    int8_t (*set_timer)(uint16_t device_slot_time, uint8_t device_slot_number);
+    int8_t (*reset_timer)(void);
 
 }network_operations_t;
 
 
 /* */
-typedef struct access_control
+typedef struct _access_control
 {
     sync_packet_t  *sync_message;  /*!< */
 
-    network_operations_t *net_ops;
+    network_operations_t *network_commands;
 
 }access_control_t;
 
@@ -161,9 +162,26 @@ typedef struct access_control
 
 /******************************************************************************/
 /*                                                                            */
-/*                       API Function Prototypes                              */
+/*              Network Structure API Function Prototypes                     */
 /*                                                                            */
 /******************************************************************************/
+
+
+
+
+access_control_t* create_network_obj(network_operations_t *network_ops);
+
+
+
+/*******************************************************************
+ * @brief  Function to send sync message through network hardware
+ * @param  *network         : reference to network handle structure
+ * @param  *message_buffer  : message buffer to be send
+ * @param  message_length   : message_length
+ * @retval int8_t           : error: -4, success: length of message
+ *******************************************************************/
+int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t message_length);
+
 
 
 
@@ -175,6 +193,18 @@ typedef struct access_control
  * @retval int8_t : Error value
  *********************************************************/
 int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size);
+
+
+
+
+
+
+
+/******************************************************************************/
+/*                                                                            */
+/*                   API Function Prototypes (client)                         */
+/*                                                                            */
+/******************************************************************************/
 
 
 
@@ -191,6 +221,15 @@ int8_t get_sync_data(device_config_t *client_device, char *message_payload ,acce
 
 
 
+
+
+/******************************************************************************/
+/*                                                                            */
+/*                   API Function Prototypes (Server)                         */
+/*                                                                            */
+/******************************************************************************/
+
+
 /***********************************************************************
  * @brief  Function to configure sync message
  * @param  *server_device   : reference to server device network handle
@@ -202,7 +241,8 @@ uint8_t comms_network_sync_message(access_control_t *server_device, uint16_t net
 
 
 
-int8_t comms_send(access_control_t *network, const char *message_buffer, uint8_t message_length);
+
+
 
 
 

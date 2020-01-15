@@ -73,7 +73,7 @@ void init_xbee_comm(void)
 
 
 
-int8_t xbee_send(const char* message_buffer, uint8_t message_length)
+int8_t xbee_send(char* message_buffer, uint8_t message_length)
 {
 
     int8_t func_retval = 0;
