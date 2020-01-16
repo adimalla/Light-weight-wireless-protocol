@@ -247,7 +247,6 @@ __attribute__((weak)) int8_t clear_status(void)
 
 
 
-
 /**************************************************************************************
  * @brief  Constructor function to create network access handle object
  * @param  *network_operations_t : reference to network operations handle
@@ -323,8 +322,6 @@ device_config_t* create_server_device(char *mac_address, uint16_t network_id, ui
 
     return &server_device;
 }
-
-
 
 
 
