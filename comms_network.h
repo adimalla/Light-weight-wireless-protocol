@@ -82,9 +82,9 @@ typedef struct _sync_packet sync_packet_t;
 /* network slot values */
 typedef enum _network_slot
 {
-    net_sync_slot      = COMMS_SYNC_SLOTNUM,
-    net_access_slot    = COMMS_ACCESS_SLOTNUM,
-    net_broadcast_slot = COMMS_BROADCAST_SLOTNUM
+    NET_SYNC_SLOT      = COMMS_SYNC_SLOTNUM,
+    NET_ACCESS_SLOT    = COMMS_ACCESS_SLOTNUM,
+    NET_BROADCAST_SLOT = COMMS_BROADCAST_SLOTNUM
 
 }network_slot_t;
 

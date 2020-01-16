@@ -385,23 +385,23 @@ int8_t comms_network_set_timer(access_control_t *network, device_config_t *devic
         switch(slot_type)
         {
 
-        case net_broadcast_slot:
+        case NET_BROADCAST_SLOT:
 
-            network->network_commands->set_timer(device->device_slot_time, net_broadcast_slot);
-
-            func_retval = 0;
-
-            break;
-
-        case net_access_slot:
-
-            network->network_commands->set_timer(device->device_slot_time, net_access_slot);
+            network->network_commands->set_timer(device->device_slot_time, NET_BROADCAST_SLOT);
 
             func_retval = 0;
 
             break;
 
-        case net_sync_slot:
+        case NET_ACCESS_SLOT:
+
+            network->network_commands->set_timer(device->device_slot_time, NET_ACCESS_SLOT);
+
+            func_retval = 0;
+
+            break;
+
+        case NET_SYNC_SLOT:
 
             /* sync slot is only a ranked slot as 1 by default and changes as per addition of devices */
             network->network_commands->set_timer(device->device_slot_time, device->total_slots);
