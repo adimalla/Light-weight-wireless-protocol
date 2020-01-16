@@ -217,6 +217,27 @@ __attribute__((weak)) int8_t sync_status(void)
 }
 
 
+__attribute__((weak)) int8_t send_status(void)
+{
+
+    return 0;
+}
+
+
+__attribute__((weak)) int8_t recv_status(void)
+{
+
+    return 0;
+}
+
+
+__attribute__((weak)) int8_t clear_status(void)
+{
+
+    return 0;
+}
+
+
 
 /******************************************************************************/
 /*                                                                            */
@@ -253,6 +274,16 @@ access_control_t* create_network_handle(network_operations_t *network_ops)
 
     if(network_ops->sync_activity_status == NULL)
         network_ops->sync_activity_status = sync_status;
+
+    if(network_ops->send_activity_status == NULL)
+        network_ops->send_activity_status = send_status;
+
+    if(network_ops->recv_activity_status == NULL)
+        network_ops->recv_activity_status = recv_status;
+
+    if(network_ops->clear_status == NULL)
+        network_ops->clear_status = clear_status;
+
 
     return &network;
 }
@@ -394,8 +425,41 @@ int8_t comms_network_set_timer(access_control_t *network, device_config_t *devic
 
 
 
+/********************************************************
+ * @brief  Function to calculate network message checksum
+ * @param  data   : message data
+ * @param  offset : starting offset for message data
+ * @param  size   : length of message
+ * @retval int8_t : checksum
+ ********************************************************/
+int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size)
+{
+    int8_t i = 0;
+    uint8_t checksum = 0;
+
+    for(i = offset; i < size; i++)
+    {
+        checksum = data[i] + ((checksum & 0xFF) + ((checksum >> 8) & 0xFF)) ;
+    }
+
+    return checksum;
+}
 
 
+
+/******************************************************************************/
+/*                                                                            */
+/*                  Network Activity / Status Functions                       */
+/*                                                                            */
+/******************************************************************************/
+
+
+
+/************************************************************
+ * @brief  Function to enable sync activity status
+ * @param  *network  : reference to network handle structure
+ * @retval int8_t    : error = -5, success = 0
+ ************************************************************/
 int8_t comms_sync_status(access_control_t *network)
 {
     int8_t func_retval = 0;
@@ -417,27 +481,79 @@ int8_t comms_sync_status(access_control_t *network)
 
 
 
-
-
-/********************************************************
- * @brief  Function to calculate network message checksum
- * @param  data   : message data
- * @param  offset : starting offset for message data
- * @param  size   : length of message
- * @retval int8_t : checksum
- ********************************************************/
-int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size)
+/************************************************************
+ * @brief  Function to enable send activity status
+ * @param  *network  : reference to network handle structure
+ * @retval int8_t    : error = -6, success = 0
+ ************************************************************/
+int8_t comms_send_status(access_control_t *network)
 {
-    int8_t i = 0;
-    uint8_t checksum = 0;
+    int8_t func_retval = 0;
 
-    for(i = offset; i < size; i++)
+    if(network == NULL)
     {
-        checksum = data[i] + ((checksum & 0xFF) + ((checksum >> 8) & 0xFF)) ;
+        func_retval = -6;
+    }
+    else
+    {
+        network->network_commands->send_activity_status();
+
+        func_retval = 0;
     }
 
-    return checksum;
+    return func_retval;
 }
+
+
+
+/************************************************************
+ * @brief  Function to enable receive activity status
+ * @param  *network  : reference to network handle structure
+ * @retval int8_t    : error = -7, success = 0
+ ************************************************************/
+int8_t comms_recv_status(access_control_t *network)
+{
+    int8_t func_retval = 0;
+
+    if(network == NULL)
+    {
+        func_retval = -7;
+    }
+    else
+    {
+        network->network_commands->recv_activity_status();
+
+        func_retval = 0;
+    }
+
+    return func_retval;
+}
+
+
+
+/************************************************************
+ * @brief  Function to enable clear activity status
+ * @param  *network  : reference to network handle structure
+ * @retval int8_t    : error = -8, success = 0
+ ************************************************************/
+int8_t comms_clear_activity(access_control_t *network)
+{
+    int8_t func_retval = 0;
+
+    if(network == NULL)
+    {
+        func_retval = -8;
+    }
+    else
+    {
+        network->network_commands->clear_status();
+
+        func_retval = 0;
+    }
+
+    return func_retval;
+}
+
 
 
 

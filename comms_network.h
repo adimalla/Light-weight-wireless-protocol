@@ -159,9 +159,9 @@ typedef struct _network_operations
     int8_t (*set_timer)(uint16_t device_slot_time, uint8_t device_slot_number);
     int8_t (*reset_timer)(void);
     int8_t (*sync_activity_status)(void);
-    int8_t (*send_status)(void);
-    int8_t (*recv_status)(void);
-    int8_t (*clear_satus)(void);
+    int8_t (*send_activity_status)(void);
+    int8_t (*recv_activity_status)(void);
+    int8_t (*clear_status)(void);
 
 }network_operations_t;
 
@@ -235,9 +235,47 @@ int8_t comms_network_set_timer(access_control_t *network, device_config_t *devic
 
 
 
+/******************************************************************************/
+/*                                                                            */
+/*              Network Activity / Status Functions Prototypes                */
+/*                                                                            */
+/******************************************************************************/
 
+
+
+/************************************************************
+ * @brief  Function to enable sync activity status
+ * @param  *network  : reference to network handle structure
+ * @retval int8_t    : error = -5, success = 0
+ ************************************************************/
 int8_t comms_sync_status(access_control_t *network);
 
+
+
+/************************************************************
+ * @brief  Function to enable send activity status
+ * @param  *network  : reference to network handle structure
+ * @retval int8_t    : error = -6, success = 0
+ ************************************************************/
+int8_t comms_send_status(access_control_t *network);
+
+
+
+/************************************************************
+ * @brief  Function to enable receive activity status
+ * @param  *network  : reference to network handle structure
+ * @retval int8_t    : error = -7, success = 0
+ ************************************************************/
+int8_t comms_recv_status(access_control_t *network);
+
+
+
+/************************************************************
+ * @brief  Function to enable clear activity status
+ * @param  *network  : reference to network handle structure
+ * @retval int8_t    : error = -8, success = 0
+ ************************************************************/
+int8_t comms_clear_activity(access_control_t *network);
 
 
 
@@ -249,7 +287,6 @@ int8_t comms_sync_status(access_control_t *network);
  * @retval int8_t : checksum
  *********************************************************/
 int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size);
-
 
 
 

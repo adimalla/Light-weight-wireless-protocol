@@ -402,11 +402,40 @@ int8_t sync_led_status(void)
 {
 
     ONBOARD_RED_LED    = 0;
+    ONBOARD_BLUE_LED   = 0;
     ONBOARD_GREEN_LED ^= 1;
 
     return 0;
 }
 
+
+int8_t recv_led_status(void)
+{
+
+    ONBOARD_BLUE_LED = 0;
+    ONBOARD_RED_LED ^= 1;
+
+    return 0;
+}
+
+int8_t send_led_status(void)
+{
+    ONBOARD_RED_LED   = 0;
+    ONBOARD_BLUE_LED ^= 1;
+
+    return 0;
+}
+
+
+int8_t clear_led_status(void)
+{
+
+    ONBOARD_RED_LED   = 0;
+    ONBOARD_BLUE_LED  = 0;
+    ONBOARD_GREEN_LED = 0;
+
+    return 0;
+}
 
 
 void wTimer5Isr(void)
@@ -419,11 +448,15 @@ void wTimer5Isr(void)
     /* WI Network related declarations */
     access_control_t *wireless_network;
 
-    network_operations_t net_ops = {
+    network_operations_t net_ops =
+    {
 
-    .send_message = xbee_send,
-    .set_timer    = set_tx_timer,
-    .sync_activity_status  = sync_led_status
+    .send_message          = xbee_send,
+    .set_timer             = set_tx_timer,
+    .sync_activity_status  = sync_led_status,
+    .send_activity_status  = send_led_status,
+    .recv_activity_status  = recv_led_status,
+    .clear_status          = clear_led_status
 
     };
 
@@ -471,8 +504,8 @@ void wTimer5Isr(void)
 
     case MSG_READ_STATE:
 
-        ONBOARD_RED_LED = 0;
-        ONBOARD_BLUE_LED = 0;
+
+        comms_clear_activity(wireless_network);
 
         fsm_state = buffer.flag_state;
         if(fsm_state == 0)
@@ -497,7 +530,7 @@ void wTimer5Isr(void)
 
     case SYNC_STATE:
 
-        /* Debug, Status LED function for sync message, access via user callback */
+        /* Activity, Status LED function for sync message, access via user callback */
         comms_sync_status(wireless_network);
 
         wireless_network->sync_message = (void*)send_message_buffer;
@@ -521,8 +554,9 @@ void wTimer5Isr(void)
 
     case JOINREQ_STATE:
 
-        ONBOARD_BLUE_LED = 0;
-        ONBOARD_RED_LED ^= 1;
+        /* Activity, Status LED function for receiving messages, access via user callback */
+        comms_recv_status(wireless_network);
+
 
         server.joinrequest_msg = (void*)buffer.read_message;
 
@@ -551,6 +585,7 @@ void wTimer5Isr(void)
         else
         {
             buffer.application_data.network_join_response = 0;
+
             fsm_state = SYNC_STATE;
         }
 
@@ -566,9 +601,11 @@ void wTimer5Isr(void)
 
     case JOINRESP_STATE:
 
-        /* send join response at broadcast slot and reset to updated slot */
+        /* Activity, Status LED function for sending messages, access via user callback */
+        comms_send_status(wireless_network);
 
-        ONBOARD_RED_LED = 0;
+
+        /* send join response at broadcast slot and reset to updated slot */
 
         memset(send_message_buffer, 0, sizeof(send_message_buffer));
 
@@ -596,6 +633,11 @@ void wTimer5Isr(void)
 
 
     case STATUSMSG_STATE:
+
+
+        /* Activity, Status LED function for receiving messages, access via user callback */
+        comms_recv_status(wireless_network);
+
 
         /* Read Status message and send control message to the destination device */
 
@@ -662,7 +704,9 @@ void wTimer5Isr(void)
 
     case CONTROLMSG_STATE:
 
-        ONBOARD_BLUE_LED = 1;
+
+        /* Activity, Status LED function for sending messages, access via user callback */
+        comms_send_status(wireless_network);
 
         memset(send_message_buffer, 0, sizeof(send_message_buffer));
 
@@ -687,8 +731,6 @@ void wTimer5Isr(void)
 
 
     default:
-
-        ONBOARD_GREEN_LED = 1;
 
         fsm_state = MSG_READ_STATE;
 
