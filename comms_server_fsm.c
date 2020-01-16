@@ -92,7 +92,8 @@ typedef enum fsm_state_values
  * @param  *client_devices   : reference to server client device DB table
  * @retval int8_t            : error = 0
  **************************************************************************/
-int8_t comms_start_server(access_control_t *wireless_network, device_config_t *server_device, comms_network_buffer_t *network_buffers, client_devices_t *client_devices)
+int8_t comms_start_server(access_control_t *wireless_network, device_config_t *server_device, comms_network_buffer_t *network_buffers,
+                          client_devices_t *client_devices, comms_server_mode_t server_mode)
 {
 
     int8_t func_retval = 1;
@@ -123,7 +124,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
     case START_STATE:
 
         /* Set timer */
-        comms_network_set_timer(wireless_network, server_device, net_sync_slot);
+        comms_network_set_timer(wireless_network, server_device, NET_SYNC_SLOT);
 
         fsm_state = SYNC_STATE;
 
@@ -200,9 +201,10 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
             }
             else
             {
+                /* Set network message flag read and network message in gateway mode */
 
                 /* Set timer to broadcast slot */
-                comms_network_set_timer(wireless_network, server_device, net_broadcast_slot);
+                comms_network_set_timer(wireless_network, server_device, NET_BROADCAST_SLOT);
 
                 fsm_state = JOINRESP_STATE;
 
@@ -252,7 +254,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         comms_send(wireless_network, (char*)server.joinresponse_msg, message_length);
 
         /* update timer to accommodate new slot */
-        comms_network_set_timer(wireless_network, server_device, net_sync_slot);
+        comms_network_set_timer(wireless_network, server_device, NET_SYNC_SLOT);
 
         fsm_state = SYNC_STATE;
 
@@ -292,7 +294,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
                 read_client_table(destination_mac_addr, &client_id, client_devices, destination_client_id - 4);
 
                 /* Set timer to broadcast slot */
-                comms_network_set_timer(wireless_network, server_device, net_broadcast_slot);
+                comms_network_set_timer(wireless_network, server_device, NET_BROADCAST_SLOT);
 
                 fsm_state = CONTROLMSG_STATE;
 
@@ -347,7 +349,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         comms_send(wireless_network, (char*)server.contrl_msg, message_length);
 
         /* set timer to sync slot after sending CONTRL message */
-        comms_network_set_timer(wireless_network, server_device, net_sync_slot);
+        comms_network_set_timer(wireless_network, server_device, NET_SYNC_SLOT);
 
         memset(status_message_buffer, 0, sizeof(status_message_buffer));
 

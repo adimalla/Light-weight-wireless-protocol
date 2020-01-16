@@ -58,6 +58,25 @@
 
 
 
+
+/******************************************************************************/
+/*                                                                            */
+/*                  Data Structures and Defines                               */
+/*                                                                            */
+/******************************************************************************/
+
+typedef enum _comms_server_modes
+{
+
+    WI_LOCAL_SERVER   = 1,
+    WI_GATEWAY_SERVER = 2
+
+
+}comms_server_mode_t;
+
+
+
+
 /******************************************************************************/
 /*                                                                            */
 /*                           API Prototypes                                   */
@@ -74,7 +93,9 @@
  * @param  *client_devices   : reference to server client device DB table
  * @retval int8_t            : error = 0
  **************************************************************************/
-int8_t comms_start_server(access_control_t *wireless_network, device_config_t *server_device, comms_network_buffer_t *network_buffers, client_devices_t *client_devices);
+int8_t comms_start_server(access_control_t *wireless_network, device_config_t *server_device,
+                          comms_network_buffer_t *network_buffers, client_devices_t *client_devices,
+                          comms_server_mode_t server_mode);
 
 
 

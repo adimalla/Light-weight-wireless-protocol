@@ -316,7 +316,7 @@ void wTimer5Isr(void)
     static client_devices_t client_devices[5];
 
     /* Start Server state machine */
-    comms_start_server(wireless_network, server_device, &buffer, client_devices);
+    comms_start_server(wireless_network, server_device, &buffer, client_devices, WI_LOCAL_SERVER);
 
 
 }
