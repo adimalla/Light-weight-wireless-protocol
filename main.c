@@ -2,7 +2,9 @@
 
 
 
-
+/*
+ * Standard Header and API Header files
+ */
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -18,7 +20,8 @@
 #include "comms_network.h"
 #include "comms_protocol.h"
 
-#include "comms_server_db.h"
+#include "comms_server_fsm.h"
+
 
 
 /******************************************************************************/
@@ -26,6 +29,7 @@
 /*                  Data Structures and Defines                               */
 /*                                                                            */
 /******************************************************************************/
+
 
 
 //****************** Bit Banding defines for Pins *********************//      (for TM4C123GXL-TIVA-C LAUNCHPAD)
@@ -45,24 +49,6 @@
 #define ONBOARD_GREEN_LED         PF3
 #define ONBOARD_PUSH_BUTTON       PF4
 
-
-
-
-typedef enum fsm_state_values
-{
-    START_STATE       = 15,
-    MSG_READ_STATE    = 10,
-    SYNC_STATE         = 1,
-    JOINREQ_STATE      = 2,
-    JOINRESP_STATE     = 3,
-    STATUSMSG_STATE    = 4,
-    STATUSACK_STATE    = 5,
-    CONTROLMSG_STATE   = 6,
-    EVENTMSG_STATE     = 7,
-    TIMEOUT_STATE      = 8,
-    EXIT_STATE         = 9
-
-}fsm_states_t;
 
 
 
@@ -95,7 +81,7 @@ void init_clocks(void)
     SYSCTL_RCC_R = SYSCTL_RCC_XTAL_16MHZ | SYSCTL_RCC_OSCSRC_MAIN | SYSCTL_RCC_USESYSDIV | (0x04 << SYSCTL_RCC_SYSDIV_S);
 
     // Enable GPIO port A, and F peripherals
-    SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOF | SYSCTL_RCGC2_GPIOC;
+    SYSCTL_RCGC2_R |= SYSCTL_RCGC2_GPIOF;
 
 }
 
@@ -124,7 +110,6 @@ void init_board_io(void)
 
 
 
-
 void init_wide_timer_5(void)
 {
     SYSCTL_RCGCWTIMER_R |= SYSCTL_RCGCWTIMER_R5;                                       // turn-on timer
@@ -144,7 +129,6 @@ void init_wide_timer_5(void)
 
 
 
-
 void gpioPortFIsr(void)
 {
 
@@ -153,6 +137,7 @@ void gpioPortFIsr(void)
     buffer.application_data.network_join_response = 1;
 
 }
+
 
 
 
@@ -208,7 +193,6 @@ void uart1ISR(void)
 
                 }
 
-
             }
         }
 
@@ -260,7 +244,6 @@ int8_t set_tx_timer(uint16_t device_slot_time, uint8_t device_slot_number)
 
 
 
-
 int8_t sync_led_status(void)
 {
 
@@ -303,8 +286,6 @@ int8_t clear_led_status(void)
 
 
 
-int8_t comms_start_server(uint8_t send_message_buffer_size);
-
 
 void wTimer5Isr(void)
 {
@@ -312,19 +293,17 @@ void wTimer5Isr(void)
     WTIMER5_ICR_R = TIMER_ICR_TAMCINT;
     WTIMER5_TAV_R = 0;
 
-
-    /* WI Network related declarations */
     access_control_t *wireless_network;
 
     network_operations_t net_ops =
     {
 
-    .send_message          = xbee_send,
-    .set_timer             = set_tx_timer,
-    .sync_activity_status  = sync_led_status,
-    .send_activity_status  = send_led_status,
-    .recv_activity_status  = recv_led_status,
-    .clear_status          = clear_led_status
+     .send_message          = xbee_send,
+     .set_timer             = set_tx_timer,
+     .sync_activity_status  = sync_led_status,
+     .send_activity_status  = send_led_status,
+     .recv_activity_status  = recv_led_status,
+     .clear_status          = clear_led_status
 
     };
 
@@ -334,277 +313,10 @@ void wTimer5Isr(void)
 
     server_device = create_server_device("11:22:33:44:55:66", 1441, COMMS_SERVER_SLOT_TIME, 3);
 
-    protocol_handle_t  server;
-
-
-    char    send_message_buffer[40] = {0};
-    uint8_t message_length           = 0;
-    char    destination_mac_addr[6]  = {0};
-
-    static int8_t  client_id                 = 0;    /*!< from device table   */
-    static uint8_t destination_client_id     = 0;    /*!< from status message */
-    static uint8_t source_client_id          = 0;
-    static char    status_message_buffer[20] = {0};
-
-    static uint8_t contrl_flag = 0;
-
-    /* Device DB related declarations */
     static client_devices_t client_devices[5];
-    static table_retval_t   table_values;
 
-
-    static int8_t fsm_state = START_STATE;
-
-    switch(fsm_state)
-    {
-
-    case START_STATE:
-
-        memset(client_devices, 0 ,sizeof(client_devices));
-
-        /* Set timer */
-        comms_network_set_timer(wireless_network, server_device, net_sync_slot);
-
-        fsm_state = SYNC_STATE;
-
-        break;
-
-
-    case MSG_READ_STATE:
-
-
-        comms_clear_activity(wireless_network);
-
-        fsm_state = buffer.flag_state;
-        if(fsm_state == 0)
-        {
-            fsm_state = SYNC_STATE;
-
-        }
-        else
-        {
-            /* change state according to message type */
-            server.packet_type = (void*)buffer.read_message;
-
-            fsm_state = server.packet_type->fixed_header.message_type;
-
-        }
-
-        buffer.flag_state = CLEAR_FLAG;
-
-        break;
-
-
-
-    case SYNC_STATE:
-
-        /* Activity, Status LED function for sync message, access via user callback */
-        comms_sync_status(wireless_network);
-
-        wireless_network->sync_message = (void*)send_message_buffer;
-
-        message_length = comms_network_sync_message(wireless_network, server_device->device_network_id, server_device->device_slot_time, "sync");
-
-        comms_send(wireless_network, (char*)wireless_network->sync_message, message_length);
-
-        fsm_state = MSG_READ_STATE;
-
-        if(contrl_flag)
-        {
-            //set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BROADCAST_SLOTNUM);
-
-            fsm_state = CONTROLMSG_STATE;
-
-        }
-
-        break;
-
-
-    case JOINREQ_STATE:
-
-        /* Activity, Status LED function for receiving messages, access via user callback */
-        comms_recv_status(wireless_network);
-
-
-        server.joinrequest_msg = (void*)buffer.read_message;
-
-        /* Check network id */
-        if(server.joinrequest_msg->network_id == server_device->device_network_id && buffer.application_data.network_join_response == 1)
-        {
-
-            table_values = update_client_table(client_devices, &server, server_device);
-            if(table_values.table_retval == -1)
-            {
-                /* function parameter error */
-                fsm_state = SYNC_STATE;
-            }
-            else
-            {
-
-                /* Set timer to broadcast slot */
-                comms_network_set_timer(wireless_network, server_device, net_broadcast_slot);
-
-                fsm_state = JOINRESP_STATE;
-
-                buffer.application_data.network_join_response = 0;
-            }
-
-        }
-        else
-        {
-            buffer.application_data.network_join_response = 0;
-
-            fsm_state = SYNC_STATE;
-        }
-
-
-        buffer.flag_state = CLEAR_FLAG;
-
-        memset(buffer.read_message, 0, sizeof(buffer.read_message));
-
-
-        break;
-
-
-
-    case JOINRESP_STATE:
-
-        /* Activity, Status LED function for sending messages, access via user callback */
-        comms_send_status(wireless_network);
-
-
-        /* send join response at broadcast slot and reset to updated slot */
-
-        memset(send_message_buffer, 0, sizeof(send_message_buffer));
-
-        server.joinresponse_msg = (void*)send_message_buffer;
-
-        /* Get client data from the device table */
-        read_client_table(destination_mac_addr, &client_id, client_devices, table_values.table_index);
-
-        /* Set join response message type */
-        comms_set_joinresp_message_status(&server, table_values.table_retval);
-
-        /* Configure JOINRESP message */
-        message_length = comms_joinresp_message(&server, *server_device, destination_mac_addr, client_id);
-
-        /* Send JOINRESP message */
-        comms_send(wireless_network, (char*)server.joinresponse_msg, message_length);
-
-        /* update timer to accommodate new slot */
-        comms_network_set_timer(wireless_network, server_device, net_sync_slot);
-
-        fsm_state = SYNC_STATE;
-
-        break;
-
-
-
-    case STATUSMSG_STATE:
-
-
-        /* Activity, Status LED function for receiving messages, access via user callback */
-        comms_recv_status(wireless_network);
-
-
-        /* Read Status message and send control message to the destination device */
-
-        server.status_msg = (void*)buffer.read_message;
-
-        /* Check network id */
-        if(server.status_msg->network_id == server_device->device_network_id)
-        {
-            /* get destination client and payload from status */
-            comms_get_status_message(status_message_buffer, &source_client_id, &destination_client_id, server);
-
-            /* handle server message condition (not done) */
-            if(destination_client_id == 1)
-            {
-                /* calibrate timer to broadcast message */
-                set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BROADCAST_SLOTNUM);
-
-                fsm_state = CONTROLMSG_STATE;
-
-            }
-            else
-            {
-                /* search table for */
-                read_client_table(destination_mac_addr, &client_id, client_devices, destination_client_id - 4);
-
-                /* Set timer to broadcast slot */
-                comms_network_set_timer(wireless_network, server_device, net_broadcast_slot);
-
-                fsm_state = CONTROLMSG_STATE;
-
-            }
-
-        }
-        else
-        {
-            fsm_state = SYNC_STATE;
-        }
-
-        memset(buffer.read_message, 0, sizeof(buffer.read_message));
-
-        buffer.flag_state = CLEAR_FLAG;
-
-
-        break;
-
-
-    case STATUSACK_STATE:
-
-        memset(send_message_buffer, 0, sizeof(send_message_buffer));
-
-        server.statusack_msg = (void*)send_message_buffer;
-
-        message_length = comms_statusack_message(&server, *server_device, client_id, destination_client_id);
-
-        uart_write(UART1, (char*)server.statusack_msg, message_length);
-
-        contrl_flag = 1;
-
-        fsm_state = MSG_READ_STATE;
-
-        break;
-
-
-
-    case CONTROLMSG_STATE:
-
-
-        /* Activity, Status LED function for sending messages, access via user callback */
-        comms_send_status(wireless_network);
-
-        memset(send_message_buffer, 0, sizeof(send_message_buffer));
-
-        server.contrl_msg = (void*)send_message_buffer;
-
-        /* echo condition (compare ID gotten from status message with ID gotten from device table )*/
-
-        message_length = comms_control_message(&server, *server_device, source_client_id, destination_client_id, status_message_buffer);
-
-        comms_send(wireless_network, (char*)server.contrl_msg, message_length);
-
-        /* set timer to sync slot after sending CONTRL message */
-        comms_network_set_timer(wireless_network, server_device, net_sync_slot);
-
-        memset(status_message_buffer, 0, sizeof(status_message_buffer));
-
-        contrl_flag = 0;
-
-        fsm_state = SYNC_STATE;
-
-        break;
-
-
-    default:
-
-        fsm_state = MSG_READ_STATE;
-
-        break;
-
-    }
+    /* Start Server state machine */
+    comms_start_server(wireless_network, server_device, &buffer, client_devices);
 
 
 }
@@ -612,7 +324,7 @@ void wTimer5Isr(void)
 
 
 
-/**
+/*
  * main.c
  */
 int main(void)

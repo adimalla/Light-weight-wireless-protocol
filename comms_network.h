@@ -158,6 +158,8 @@ typedef struct _network_operations
     int8_t (*recv_message)(char *message_buffer, uint8_t message_length);
     int8_t (*set_timer)(uint16_t device_slot_time, uint8_t device_slot_number);
     int8_t (*reset_timer)(void);
+    int8_t (*request_timeout)(uint8_t timeout_seconds);
+    int8_t (*response_timeout)(uint8_t timeout_seconds);
     int8_t (*sync_activity_status)(void);
     int8_t (*send_activity_status)(void);
     int8_t (*recv_activity_status)(void);

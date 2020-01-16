@@ -1,8 +1,8 @@
 /**
  ******************************************************************************
- * @file    comms_server_db.h
+ * @file    comms_server_db.c
  * @author  Aditya Mall,
- * @brief   (6314) wireless network server connected devices database header
+ * @brief   (6314) wireless network server connected devices database source
  *              file.
  *
  *  Info
