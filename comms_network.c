@@ -346,8 +346,11 @@ int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t messa
     }
     else
     {
+
+#if 0   /* Future use , handle terminationfrom send function, requires change of all protocol functions */
         /* Add message terminator */
-        //strncpy(message_buffer + message_length, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
+        strncpy(message_buffer + message_length, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
+#endif
 
         send_retval = network->network_commands->send_message(message_buffer, message_length);
         if(send_retval < 0)
