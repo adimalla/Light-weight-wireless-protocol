@@ -18,7 +18,7 @@
 #include "comms_network.h"
 #include "comms_protocol.h"
 
-
+#include "comms_server_db.h"
 
 
 /******************************************************************************/
@@ -230,131 +230,6 @@ void uart1ISR(void)
 
 
 
-typedef struct client_devices
-{
-    uint8_t client_id;
-    char    client_mac[6];
-    uint8_t client_number_of_slots;
-    uint8_t client_state;
-
-}client_devices_t;
-
-
-
-typedef struct table_return_values
-{
-    uint8_t table_index;
-    int8_t table_retval;
-
-}table_retval_t;
-
-
-/* -2 : JOINRESP_NACK, -3: JOINRESP_DUP */
-table_retval_t update_client_table(client_devices_t *device_table, protocol_handle_t *protocol_server, device_config_t *server)
-{
-    table_retval_t return_value;
-
-    uint8_t index = 0;
-    uint8_t found = 0;
-
-    uint16_t requested_slots = 0;
-
-    /* Get number of slots from the payload */
-    requested_slots = atoi(protocol_server->joinrequest_msg->payload);
-
-    /* Error check */
-    if(device_table == NULL || protocol_server == NULL || server == NULL )
-    {
-        return_value.table_retval = -1;
-    }
-    else if(requested_slots > COMMS_SERVER_MAX_SLOTS)
-    {
-        return_value.table_retval = -2;
-    }
-    else
-    {
-        /* get data from join request */
-        for(index = 0; index < 5; index++)
-        {
-            if(memcmp(device_table[index].client_mac, protocol_server->joinrequest_msg->source_mac,6) == 0)
-            {
-                found = 1;
-
-                /* Request for already present device */
-                return_value.table_retval = -3;
-
-                return_value.table_index = index;
-
-                break;
-            }
-            else if(device_table[index].client_id == 0) /* Fill the next available row */
-            {
-                found = 0;
-
-                /* Add new device ID to table */
-                device_table[index].client_id = server->total_slots + 1;
-
-                /* Add MAC address to table */
-                memcpy(device_table[index].client_mac, protocol_server->joinrequest_msg->source_mac, 6);
-
-                /* Update slot */
-                if(requested_slots > 1)
-                {
-                    server->total_slots += requested_slots;
-                }
-                else
-                {
-                    server->total_slots++;
-                }
-
-                /* Add client slots to table */
-                device_table[index].client_number_of_slots = requested_slots;
-
-
-                /* update device count */
-                server->device_count++;
-
-                /* return client ID */
-                return_value.table_index = index;
-
-                return_value.table_retval = 0;
-
-                break;
-            }
-
-        }
-    }
-
-    return return_value;
-}
-
-
-
-int8_t read_client_table(char *client_mac_address, int8_t *client_id, client_devices_t *device_table, int16_t table_index)
-{
-    int8_t func_retval;
-
-    if(table_index < 0)
-    {
-        //strncpy(client_mac_address, device_table[table_index].client_mac, 6);
-        *client_id = table_index;
-
-        func_retval = -4;
-    }
-    else
-    {
-        strncpy(client_mac_address, device_table[table_index].client_mac, 6);
-        *client_id = device_table[table_index].client_id;
-
-        func_retval = 0;
-    }
-
-    return func_retval;
-
-}
-
-
-
 int8_t set_tx_timer(uint16_t device_slot_time, uint8_t device_slot_number)
 {
     int8_t func_retval;
@@ -383,18 +258,6 @@ int8_t set_tx_timer(uint16_t device_slot_time, uint8_t device_slot_number)
 }
 
 
-
-int dummy_func(char *msh, uint8_t length)
-{
-
-    __asm(" NOP");
-
-    return 0;
-}
-
-
-
-int8_t comms_start_server(uint8_t send_message_buffer_size);
 
 
 
@@ -436,6 +299,11 @@ int8_t clear_led_status(void)
 
     return 0;
 }
+
+
+
+
+int8_t comms_start_server(uint8_t send_message_buffer_size);
 
 
 void wTimer5Isr(void)
