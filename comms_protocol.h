@@ -205,7 +205,8 @@ typedef struct contrl
 
 
 
-typedef struct network_message
+
+typedef struct _network_message
 {
     char preamble[PREAMBLE_LENGTH];  /*!< */
     comms_header_t fixed_header;     /*!< */

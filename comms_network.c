@@ -51,7 +51,7 @@
 #include <stdlib.h>
 
 #include "comms_network.h"
-#include "network_protocol_configs.h"
+
 
 
 
@@ -88,6 +88,7 @@ struct _sync_packet
     char        payload[COMMS_NET_PAYLOAD_LENGTH];    /*!< */
 
 };
+
 
 
 
@@ -209,6 +210,13 @@ __attribute__((weak)) int8_t reset_timer(void)
 
 
 
+__attribute__((weak)) int8_t sync_status(void)
+{
+
+    return 0;
+}
+
+
 
 /******************************************************************************/
 /*                                                                            */
@@ -219,11 +227,11 @@ __attribute__((weak)) int8_t reset_timer(void)
 
 
 
-/*********************************************************************************
+/**************************************************************************************
  * @brief  Constructor function to create network access handle object
  * @param  *network_operations_t : reference to network operations handle
- * @retval access_control_t : error: NULL, success: address of the created object
- *********************************************************************************/
+ * @retval access_control_t      : error: NULL, success: address of the created object
+ **************************************************************************************/
 access_control_t* create_network_handle(network_operations_t *network_ops)
 {
     static access_control_t network;
@@ -242,6 +250,9 @@ access_control_t* create_network_handle(network_operations_t *network_ops)
 
     if(network_ops->reset_timer == NULL)
         network_ops->reset_timer = reset_timer;
+
+    if(network_ops->sync_activity_status == NULL)
+        network_ops->sync_activity_status = sync_status;
 
     return &network;
 }
@@ -292,7 +303,7 @@ device_config_t* create_server_device(char *mac_address, uint16_t network_id, ui
  * @param  *network         : reference to network handle structure
  * @param  *message_buffer  : message buffer to be send
  * @param  message_length   : message_length
- * @retval int8_t           : error: -4, success: length of message
+ * @retval int8_t           : error: -1, success: length of message
  ***********************************************************************/
 int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t message_length)
 {
@@ -301,7 +312,7 @@ int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t messa
 
     if(message_buffer == NULL || message_length == 0)
     {
-        func_retval = -4;
+        func_retval = -1;
     }
     else
     {
@@ -310,7 +321,7 @@ int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t messa
 
         send_retval = network->network_commands->send_message(message_buffer, message_length);
         if(send_retval < 0)
-            func_retval = -4;
+            func_retval = -1;
         else
             func_retval = message_length;
     }
@@ -318,6 +329,92 @@ int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t messa
 
     return func_retval;
 }
+
+
+
+/*********************************************************************
+ * @brief  Function to set transmission timer for slotted network
+ * @param  *network  : reference to network handle structure
+ * @param  *device   : reference to the device configuration structure
+ * @param  slot_type : type of network slot
+ * @retval int8_t    : error: -3, success: 0
+ *********************************************************************/
+int8_t comms_network_set_timer(access_control_t *network, device_config_t *device, network_slot_t slot_type)
+{
+    int8_t func_retval = 0;
+
+    if(device->device_slot_time == 0 || device->total_slots == 0)
+    {
+        func_retval = -3;
+    }
+    else
+    {
+        switch(slot_type)
+        {
+
+        case net_broadcast_slot:
+
+            network->network_commands->set_timer(device->device_slot_time, net_broadcast_slot);
+
+            func_retval = 0;
+
+            break;
+
+        case net_access_slot:
+
+            network->network_commands->set_timer(device->device_slot_time, net_access_slot);
+
+            func_retval = 0;
+
+            break;
+
+        case net_sync_slot:
+
+            /* sync slot is only a ranked slot as 1 by default and changes as per addition of devices */
+            network->network_commands->set_timer(device->device_slot_time, device->total_slots);
+
+            func_retval = 0;
+
+            break;
+
+        default:
+
+            func_retval = -3;
+
+            break;
+
+        }
+
+    }
+
+    return func_retval;
+}
+
+
+
+
+
+
+
+int8_t comms_sync_status(access_control_t *network)
+{
+    int8_t func_retval = 0;
+
+    if(network == NULL)
+    {
+        func_retval = -5;
+    }
+    else
+    {
+        network->network_commands->sync_activity_status();
+
+        func_retval = 0;
+    }
+
+    return func_retval;
+}
+
+
 
 
 
@@ -353,20 +450,20 @@ int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size)
 
 
 
-/************************************************************************
+/*************************************************************************
  * @brief  Function to get sync message data
  * @param  *client_device   : reference to client device config structure
  * @param  *message_payload : message payload from sync message
  * @param  network          : network handle structure
- * @retval int8_t           : error: -1, success: 0
- ************************************************************************/
+ * @retval int8_t           : error: -5, success: 0
+ *************************************************************************/
 int8_t get_sync_data(device_config_t *client_device, char *message_payload ,access_control_t network)
 {
     int8_t func_retval;
 
     if(client_device == NULL || network.sync_message == NULL || message_payload == NULL)
     {
-        func_retval = -1;
+        func_retval = -5;
     }
     else
     {

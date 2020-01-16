@@ -15,7 +15,6 @@
 
 #include "xbee_driver.h"
 
-#include "network_protocol_configs.h"
 #include "comms_network.h"
 #include "comms_protocol.h"
 
@@ -399,6 +398,17 @@ int8_t comms_start_server(uint8_t send_message_buffer_size);
 
 
 
+int8_t sync_led_status(void)
+{
+
+    ONBOARD_RED_LED    = 0;
+    ONBOARD_GREEN_LED ^= 1;
+
+    return 0;
+}
+
+
+
 void wTimer5Isr(void)
 {
     // Clear Interrupt
@@ -411,8 +421,9 @@ void wTimer5Isr(void)
 
     network_operations_t net_ops = {
 
-    .send_message = xbee_send
-
+    .send_message = xbee_send,
+    .set_timer    = set_tx_timer,
+    .sync_activity_status  = sync_led_status
 
     };
 
@@ -424,9 +435,8 @@ void wTimer5Isr(void)
 
     protocol_handle_t  server;
 
-    static uint8_t contrl_flag = 0;
 
-    char    send_message_buffer[144] = {0};
+    char    send_message_buffer[40] = {0};
     uint8_t message_length           = 0;
     char    destination_mac_addr[6]  = {0};
 
@@ -435,6 +445,7 @@ void wTimer5Isr(void)
     static uint8_t source_client_id          = 0;
     static char    status_message_buffer[20] = {0};
 
+    static uint8_t contrl_flag = 0;
 
     /* Device DB related declarations */
     static client_devices_t client_devices[5];
@@ -450,8 +461,8 @@ void wTimer5Isr(void)
 
         memset(client_devices, 0 ,sizeof(client_devices));
 
-        /* calibrate timer */
-        set_tx_timer(server_device->device_slot_time, server_device->total_slots);
+        /* Set timer */
+        comms_network_set_timer(wireless_network, server_device, net_sync_slot);
 
         fsm_state = SYNC_STATE;
 
@@ -486,8 +497,8 @@ void wTimer5Isr(void)
 
     case SYNC_STATE:
 
-        ONBOARD_RED_LED    = 0;
-        ONBOARD_GREEN_LED ^= 1;
+        /* Debug, Status LED function for sync message, access via user callback */
+        comms_sync_status(wireless_network);
 
         wireless_network->sync_message = (void*)send_message_buffer;
 
@@ -499,7 +510,7 @@ void wTimer5Isr(void)
 
         if(contrl_flag)
         {
-            //set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BRODCAST_SLOTNUM);
+            //set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BROADCAST_SLOTNUM);
 
             fsm_state = CONTROLMSG_STATE;
 
@@ -527,8 +538,9 @@ void wTimer5Isr(void)
             }
             else
             {
-                /* calibrate timer to broadcast slot */
-                set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BRODCAST_SLOTNUM);
+
+                /* Set timer to broadcast slot */
+                comms_network_set_timer(wireless_network, server_device, net_broadcast_slot);
 
                 fsm_state = JOINRESP_STATE;
 
@@ -575,7 +587,7 @@ void wTimer5Isr(void)
         comms_send(wireless_network, (char*)server.joinresponse_msg, message_length);
 
         /* update timer to accommodate new slot */
-        set_tx_timer(COMMS_SERVER_SLOT_TIME, server_device->total_slots);
+        comms_network_set_timer(wireless_network, server_device, net_sync_slot);
 
         fsm_state = SYNC_STATE;
 
@@ -599,7 +611,7 @@ void wTimer5Isr(void)
             if(destination_client_id == 1)
             {
                 /* calibrate timer to broadcast message */
-                set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BRODCAST_SLOTNUM);
+                set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BROADCAST_SLOTNUM);
 
                 fsm_state = CONTROLMSG_STATE;
 
@@ -609,8 +621,8 @@ void wTimer5Isr(void)
                 /* search table for */
                 read_client_table(destination_mac_addr, &client_id, client_devices, destination_client_id - 4);
 
-                /* calibrate timer to broadcast message */
-                set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BRODCAST_SLOTNUM);
+                /* Set timer to broadcast slot */
+                comms_network_set_timer(wireless_network, server_device, net_broadcast_slot);
 
                 fsm_state = CONTROLMSG_STATE;
 
@@ -662,7 +674,8 @@ void wTimer5Isr(void)
 
         comms_send(wireless_network, (char*)server.contrl_msg, message_length);
 
-        set_tx_timer(COMMS_SERVER_SLOT_TIME, server_device->total_slots);
+        /* set timer to sync slot after sending CONTRL message */
+        comms_network_set_timer(wireless_network, server_device, net_sync_slot);
 
         memset(status_message_buffer, 0, sizeof(status_message_buffer));
 
@@ -671,7 +684,6 @@ void wTimer5Isr(void)
         fsm_state = SYNC_STATE;
 
         break;
-
 
 
     default:

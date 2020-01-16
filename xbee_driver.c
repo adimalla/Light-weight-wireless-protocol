@@ -12,8 +12,6 @@
 #include "uart_tm4c123gh6pm.h"
 
 #include "xbee_driver.h"
-#include "comms_network.h"
-
 
 
 

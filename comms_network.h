@@ -49,7 +49,7 @@
  * Standard Header and API Header files
  */
 #include <stdint.h>
-
+#include "network_protocol_configs.h"
 
 
 /******************************************************************************/
@@ -76,6 +76,19 @@
 
 /* Wireless network SYNC Message structure Declaration */
 typedef struct _sync_packet sync_packet_t;
+
+
+
+/* network slot values */
+typedef enum _network_slot
+{
+    net_sync_slot      = COMMS_SYNC_SLOTNUM,
+    net_access_slot    = COMMS_ACCESS_SLOTNUM,
+    net_broadcast_slot = COMMS_BROADCAST_SLOTNUM
+
+}network_slot_t;
+
+
 
 
 /* */
@@ -138,17 +151,23 @@ typedef struct _comms_network_buffer
 
 
 
+/* Network operations handle */
 typedef struct _network_operations
 {
     int8_t (*send_message)(char *message_buffer, uint8_t message_length);
     int8_t (*recv_message)(char *message_buffer, uint8_t message_length);
     int8_t (*set_timer)(uint16_t device_slot_time, uint8_t device_slot_number);
     int8_t (*reset_timer)(void);
+    int8_t (*sync_activity_status)(void);
+    int8_t (*send_status)(void);
+    int8_t (*recv_status)(void);
+    int8_t (*clear_satus)(void);
 
 }network_operations_t;
 
 
-/* */
+
+/* Network Access Control Handle */
 typedef struct _access_control
 {
     sync_packet_t  *sync_message;  /*!< */
@@ -168,11 +187,11 @@ typedef struct _access_control
 
 
 
-/*********************************************************************************
+/**************************************************************************************
  * @brief  Constructor function to create network access handle object
  * @param  *network_operations_t : reference to network operations handle
- * @retval access_control_t : error: NULL, success: address of the created object
- *********************************************************************************/
+ * @retval access_control_t      : error: NULL, success: address of the created object
+ **************************************************************************************/
 access_control_t* create_network_handle(network_operations_t *network_ops);
 
 
@@ -196,9 +215,28 @@ device_config_t* create_server_device(char *mac_address, uint16_t network_id, ui
  * @param  *network         : reference to network handle structure
  * @param  *message_buffer  : message buffer to be send
  * @param  message_length   : message_length
- * @retval int8_t           : error: -4, success: length of message
+ * @retval int8_t           : error: -1, success: length of message
  *******************************************************************/
 int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t message_length);
+
+
+
+
+/*********************************************************************
+ * @brief  Function to set transmission timer for slotted network
+ * @param  *network  : reference to network handle structure
+ * @param  *device   : reference to the device configuration structure
+ * @param  slot_type : type of network slot
+ * @retval int8_t    : error: -3, success: 0
+ *********************************************************************/
+int8_t comms_network_set_timer(access_control_t *network, device_config_t *device, network_slot_t slot_type);
+
+
+
+
+
+
+int8_t comms_sync_status(access_control_t *network);
 
 
 
@@ -217,7 +255,6 @@ int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size);
 
 
 
-
 /******************************************************************************/
 /*                                                                            */
 /*                   API Function Prototypes (client)                         */
@@ -227,13 +264,13 @@ int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size);
 
 
 
-/************************************************************************
+/*************************************************************************
  * @brief  Function to get sync message data
  * @param  *client_device   : reference to client device config structure
  * @param  *message_payload : message payload from syn cmessage
  * @param  network          : network handle structure
- * @retval int8_t           : error -1, success: 0
- ************************************************************************/
+ * @retval int8_t           : error -5, success: 0
+ *************************************************************************/
 int8_t get_sync_data(device_config_t *client_device, char *message_payload ,access_control_t network);
 
 
@@ -245,6 +282,7 @@ int8_t get_sync_data(device_config_t *client_device, char *message_payload ,acce
 /*                   API Function Prototypes (Server)                         */
 /*                                                                            */
 /******************************************************************************/
+
 
 
 /***********************************************************************

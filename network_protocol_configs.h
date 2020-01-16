@@ -53,10 +53,12 @@
 #define PREAMBLE_CONTRL     0xCC22
 #define PREAMBLE_STATUSACK  0xCC33
 
-/* Message Options defines */
-#define COMMS_SERVER_SLOTNUM       1
-#define COMMS_ACCESS_SLOTNUM       2
-#define COMMS_BRODCAST_SLOTNUM     3
+/* Network slot defines */
+#define COMMS_SERVER_SLOTNUM        1
+#define COMMS_ACCESS_SLOTNUM        2
+#define COMMS_BROADCAST_SLOTNUM     3
+#define COMMS_SYNC_SLOTNUM          COMMS_SERVER_SLOTNUM  /* Server slot number is a ranked slot number, also used for sync message slot, changes with number of device */
+
 
 /* Generic message size defines */
 #define COMMS_PREAMBLE_LENTH            2
