@@ -476,7 +476,6 @@ void wTimer5Isr(void)
 
             fsm_state = server.packet_type->fixed_header.message_type;
 
-
         }
 
         buffer.flag_state = CLEAR_FLAG;

@@ -205,10 +205,10 @@ int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t messa
 
 /*********************************************************
  * @brief  Function to calculate network message checksum
- * @param  data   : Message data
- * @param  offset : Starting offset for message data
- * @param  size   : Length of message
- * @retval int8_t : Error value
+ * @param  data   : message data
+ * @param  offset : starting offset for message data
+ * @param  size   : length of message
+ * @retval int8_t : checksum
  *********************************************************/
 int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size);
 
@@ -227,7 +227,7 @@ int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size);
 
 
 
-/*************************************************************************
+/************************************************************************
  * @brief  Function to get sync message data
  * @param  *client_device   : reference to client device config structure
  * @param  *message_payload : message payload from syn cmessage
@@ -235,7 +235,6 @@ int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size);
  * @retval int8_t           : error -1, success: 0
  ************************************************************************/
 int8_t get_sync_data(device_config_t *client_device, char *message_payload ,access_control_t network);
-
 
 
 

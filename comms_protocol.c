@@ -93,10 +93,10 @@ typedef enum device_return_codes
 
 /********************************************************
  * @brief  static function to calculate message checksum
- * @param  data   : Message data
- * @param  offset : Starting offset for message data
- * @param  size   : Length of message
- * @retval int8_t : Error value
+ * @param  data   : message data
+ * @param  offset : starting offset for message data
+ * @param  size   : length of message
+ * @retval int8_t : checksum
  ********************************************************/
 int8_t static comms_checksum(char *data, uint8_t offset, uint8_t size)
 {

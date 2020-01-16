@@ -59,7 +59,6 @@
 
 
 
-
 /******************************************************************************/
 /*                                                                            */
 /*                  Private Data Structures for wireless network              */
@@ -99,6 +98,7 @@ struct _sync_packet
 /******************************************************************************/
 
 
+
 /* Implementation of glibc reentrant strtok Copyright (C) 1991-2019 GNU C Library */
 
 static char *ti_strtok_r (char *s, const char *delim, char **save_ptr)
@@ -132,11 +132,11 @@ static char *ti_strtok_r (char *s, const char *delim, char **save_ptr)
 }
 
 
+
 /********************************************************
  * @brief  static function to set mac address
- * @param  data   : Message data
- * @param  offset : Starting offset for message data
- * @param  size   : Length of message
+ * @param  *device_mac  : device mac address (Hex)
+ * @param  *mac_address : mac address (string)
  * @retval int8_t : Error value
  ********************************************************/
 static int8_t set_mac_address(char *device_mac, char *mac_address)
@@ -156,6 +156,7 @@ static int8_t set_mac_address(char *device_mac, char *mac_address)
 
     rest_ptr = mac_address_copy;
 
+    /* strtok_r function for non glibc compliant code */
     while( (token = ti_strtok_r(rest_ptr, ":", &rest_ptr)) )
     {
         /* Convert to hex */
@@ -323,10 +324,10 @@ int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t messa
 
 /********************************************************
  * @brief  Function to calculate network message checksum
- * @param  data   : Message data
- * @param  offset : Starting offset for message data
- * @param  size   : Length of message
- * @retval int8_t : Error value
+ * @param  data   : message data
+ * @param  offset : starting offset for message data
+ * @param  size   : length of message
+ * @retval int8_t : checksum
  ********************************************************/
 int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size)
 {
