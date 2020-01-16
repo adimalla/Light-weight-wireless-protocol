@@ -311,12 +311,12 @@ int8_t comms_get_contrl_data(char *message_buffer, uint8_t *source_client_id, pr
 
 
 
-
 /******************************************************************************/
 /*                                                                            */
 /*                    API Function Prototypes (Server)                        */
 /*                                                                            */
 /******************************************************************************/
+
 
 
 
@@ -372,6 +372,7 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
 
 
 int8_t comms_statusack_message(protocol_handle_t *client, device_config_t device, int8_t client_id, uint8_t destination_client_id);
+
 
 
 

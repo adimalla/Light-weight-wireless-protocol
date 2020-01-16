@@ -293,7 +293,7 @@ table_retval_t update_client_table(client_devices_t *device_table, protocol_hand
                 found = 0;
 
                 /* Add new device ID to table */
-                device_table[index].client_id = server->total_slots;
+                device_table[index].client_id = server->total_slots + 1;
 
                 /* Add MAC address to table */
                 memcpy(device_table[index].client_mac, protocol_server->joinrequest_msg->source_mac, 6);
@@ -385,6 +385,19 @@ int8_t set_tx_timer(uint16_t device_slot_time, uint8_t device_slot_number)
 
 
 
+int dummy_func(char *msh, uint8_t length)
+{
+
+    __asm(" NOP");
+
+    return 0;
+}
+
+
+
+int8_t comms_start_server(uint8_t send_message_buffer_size);
+
+
 
 void wTimer5Isr(void)
 {
@@ -396,27 +409,37 @@ void wTimer5Isr(void)
     /* WI Network related declarations */
     access_control_t *wireless_network;
 
-    network_operations_t net_ops = {xbee_send};
+    network_operations_t net_ops = {
 
-    wireless_network = create_network_obj(&net_ops);
+    .send_message = xbee_send
 
-    static device_config_t server_device;
-    protocol_handle_t      server;
 
-    /* Device DB related declarations */
-    static client_devices_t client_devices[5];
-    static table_retval_t   table_values;
+    };
+
+    wireless_network = create_network_handle(&net_ops);
+
+    device_config_t *server_device;
+
+    server_device = create_server_device("11:22:33:44:55:66", 1441, COMMS_SERVER_SLOT_TIME, 3);
+
+    protocol_handle_t  server;
 
     static uint8_t contrl_flag = 0;
 
-    char    message_buffer[144]     = {0};
-    uint8_t message_length          = 0;
-    char    destination_mac_addr[6] = {0};
+    char    send_message_buffer[144] = {0};
+    uint8_t message_length           = 0;
+    char    destination_mac_addr[6]  = {0};
 
     static int8_t  client_id                 = 0;    /*!< from device table   */
     static uint8_t destination_client_id     = 0;    /*!< from status message */
     static uint8_t source_client_id          = 0;
     static char    status_message_buffer[20] = {0};
+
+
+    /* Device DB related declarations */
+    static client_devices_t client_devices[5];
+    static table_retval_t   table_values;
+
 
     static int8_t fsm_state = START_STATE;
 
@@ -425,23 +448,10 @@ void wTimer5Isr(void)
 
     case START_STATE:
 
-        memset(&server_device, 0 ,sizeof(server_device));
         memset(client_devices, 0 ,sizeof(client_devices));
 
-        server_device.device_mac[0] = 11;
-        server_device.device_mac[1] = 22;
-        server_device.device_mac[2] = 33;
-        server_device.device_mac[3] = 44;
-        server_device.device_mac[4] = 55;
-        server_device.device_mac[5] = 66;
-
-        server_device.device_network_id  = 1441;
-        server_device.device_slot_number = COMMS_SERVER_SLOTNUM;
-        server_device.device_slot_time   = COMMS_SERVER_SLOT_TIME;
-        server_device.total_slots        = 4;
-
         /* calibrate timer */
-        set_tx_timer(COMMS_SERVER_SLOT_TIME, server_device.total_slots);
+        set_tx_timer(server_device->device_slot_time, server_device->total_slots);
 
         fsm_state = SYNC_STATE;
 
@@ -480,9 +490,9 @@ void wTimer5Isr(void)
         ONBOARD_RED_LED    = 0;
         ONBOARD_GREEN_LED ^= 1;
 
-        wireless_network->sync_message = (void*)message_buffer;
+        wireless_network->sync_message = (void*)send_message_buffer;
 
-        message_length = comms_network_sync_message(wireless_network, server_device.device_network_id, server_device.device_slot_time, "sync");
+        message_length = comms_network_sync_message(wireless_network, server_device->device_network_id, server_device->device_slot_time, "sync");
 
         comms_send(wireless_network, (char*)wireless_network->sync_message, message_length);
 
@@ -507,10 +517,10 @@ void wTimer5Isr(void)
         server.joinrequest_msg = (void*)buffer.read_message;
 
         /* Check network id */
-        if(server.joinrequest_msg->network_id == server_device.device_network_id && buffer.application_data.network_join_response == 1)
+        if(server.joinrequest_msg->network_id == server_device->device_network_id && buffer.application_data.network_join_response == 1)
         {
 
-            table_values = update_client_table(client_devices, &server, &server_device);
+            table_values = update_client_table(client_devices, &server, server_device);
             if(table_values.table_retval == -1)
             {
                 /* function parameter error */
@@ -549,9 +559,9 @@ void wTimer5Isr(void)
 
         ONBOARD_RED_LED = 0;
 
-        memset(message_buffer, 0, sizeof(message_buffer));
+        memset(send_message_buffer, 0, sizeof(send_message_buffer));
 
-        server.joinresponse_msg = (void*)message_buffer;
+        server.joinresponse_msg = (void*)send_message_buffer;
 
         /* Get client data from the device table */
         read_client_table(destination_mac_addr, &client_id, client_devices, table_values.table_index);
@@ -560,13 +570,13 @@ void wTimer5Isr(void)
         comms_set_joinresp_message_status(&server, table_values.table_retval);
 
         /* Configure JOINRESP message */
-        message_length = comms_joinresp_message(&server, server_device, destination_mac_addr, client_id);
+        message_length = comms_joinresp_message(&server, *server_device, destination_mac_addr, client_id);
 
         /* Send JOINRESP message */
         comms_send(wireless_network, (char*)server.joinresponse_msg, message_length);
 
         /* update timer to accommodate new slot */
-        set_tx_timer(COMMS_SERVER_SLOT_TIME, server_device.total_slots);
+        set_tx_timer(COMMS_SERVER_SLOT_TIME, server_device->total_slots);
 
         fsm_state = SYNC_STATE;
 
@@ -581,7 +591,7 @@ void wTimer5Isr(void)
         server.status_msg = (void*)buffer.read_message;
 
         /* Check network id */
-        if(server.status_msg->network_id == server_device.device_network_id)
+        if(server.status_msg->network_id == server_device->device_network_id)
         {
             /* get destination client and payload from status */
             comms_get_status_message(status_message_buffer, &source_client_id, &destination_client_id, server);
@@ -607,14 +617,13 @@ void wTimer5Isr(void)
 
             }
 
-            memset(buffer.read_message, 0, sizeof(buffer.read_message));
-
-
         }
         else
         {
             fsm_state = SYNC_STATE;
         }
+
+        memset(buffer.read_message, 0, sizeof(buffer.read_message));
 
         buffer.flag_state = CLEAR_FLAG;
 
@@ -624,11 +633,11 @@ void wTimer5Isr(void)
 
     case STATUSACK_STATE:
 
-        memset(message_buffer, 0, sizeof(message_buffer));
+        memset(send_message_buffer, 0, sizeof(send_message_buffer));
 
-        server.statusack_msg = (void*)message_buffer;
+        server.statusack_msg = (void*)send_message_buffer;
 
-        message_length = comms_statusack_message(&server, server_device, client_id, destination_client_id);
+        message_length = comms_statusack_message(&server, *server_device, client_id, destination_client_id);
 
         uart_write(UART1, (char*)server.statusack_msg, message_length);
 
@@ -644,27 +653,26 @@ void wTimer5Isr(void)
 
         ONBOARD_BLUE_LED = 1;
 
-        memset(message_buffer, 0, sizeof(message_buffer));
+        memset(send_message_buffer, 0, sizeof(send_message_buffer));
 
-        server.contrl_msg = (void*)message_buffer;
+        server.contrl_msg = (void*)send_message_buffer;
 
         /* echo condition (compare ID gotten from status message with ID gotten from device table )*/
 
-        message_length = comms_control_message(&server, server_device, source_client_id, destination_client_id, status_message_buffer);
+        message_length = comms_control_message(&server, *server_device, source_client_id, destination_client_id, status_message_buffer);
 
-        //uart_write(UART1, (char*)server.contrl_msg, message_length);
         comms_send(wireless_network, (char*)server.contrl_msg, message_length);
 
-        set_tx_timer(COMMS_SERVER_SLOT_TIME, server_device.total_slots);
+        set_tx_timer(COMMS_SERVER_SLOT_TIME, server_device->total_slots);
 
         memset(status_message_buffer, 0, sizeof(status_message_buffer));
 
         contrl_flag = 0;
 
-
         fsm_state = SYNC_STATE;
 
         break;
+
 
 
     default:

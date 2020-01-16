@@ -168,8 +168,26 @@ typedef struct _access_control
 
 
 
+/*********************************************************************************
+ * @brief  Constructor function to create network access handle object
+ * @param  *network_operations_t : reference to network operations handle
+ * @retval access_control_t : error: NULL, success: address of the created object
+ *********************************************************************************/
+access_control_t* create_network_handle(network_operations_t *network_ops);
 
-access_control_t* create_network_obj(network_operations_t *network_ops);
+
+
+
+/**************************************************************************************
+ * @brief  Constructor function to create server device configure object
+ * @param  *mac_address          : mac_address of the server device
+ * @param  network_id            : network id of the server
+ * @param  device_slot_time      : slot time interval
+ * @param  total_slots           : no of existing slots at start
+ * @retval device_config_t       : error: NULL, success: address of the created object
+ **************************************************************************************/
+device_config_t* create_server_device(char *mac_address, uint16_t network_id, uint16_t device_slot_time, uint8_t total_slots);
+
 
 
 

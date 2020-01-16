@@ -91,7 +91,6 @@ typedef enum device_return_codes
 /******************************************************************************/
 
 
-
 /********************************************************
  * @brief  static function to calculate message checksum
  * @param  data   : Message data
@@ -111,7 +110,6 @@ int8_t static comms_checksum(char *data, uint8_t offset, uint8_t size)
 
     return checksum;
 }
-
 
 
 
@@ -456,6 +454,9 @@ int8_t comms_get_contrl_data(char *message_buffer, uint8_t* source_client_id, pr
 
 
 
+
+
+
 /*******************************************************************
  * @brief  Function to set JOINRESP message status
  * @param  server       : reference to the protocol handle structure
@@ -737,3 +738,12 @@ int8_t comms_statusack_message(protocol_handle_t *client, device_config_t device
 
     return func_retval;
 }
+
+
+
+
+
+
+
+
+
