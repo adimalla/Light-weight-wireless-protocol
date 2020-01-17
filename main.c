@@ -139,70 +139,37 @@ void gpioPortFIsr(void)
 }
 
 
+int8_t clear_uart_recv_interrupt(void)
+{
+    /* Clear UART interrupt */
+    UART1->ICR |= (1 << 4);
+
+    return 0;
+}
+
+
+
+
 
 void uart1ISR(void)
 {
-    protocol_handle_t server_device;
+
+    access_control_t *wireless_network;
+
+    network_operations_t net_ops =
+    {
+     .clear_recv_interrupt = clear_uart_recv_interrupt,
+    };
+
+    wireless_network = create_network_handle(&net_ops);
 
     static uint8_t rx_index = 0;
-    uint8_t checksum = 0;
 
     char c = UART1->DR & 0xFF;
 
     buffer.receive_message[rx_index] = c;
 
-    if(buffer.receive_message[rx_index] == 't' && buffer.receive_message[rx_index - 1] == '\r')
-    {
-
-        /* Clear UART interrupt */
-        UART1->ICR |= (1 << 4);
-
-        server_device.packet_type = (void*)buffer.receive_message;
-
-        /* Validate checksum */
-        checksum = comms_network_checksum((char*)buffer.receive_message, 5, rx_index + 1);
-
-        rx_index = 0;
-
-        if(server_device.packet_type->fixed_header.message_checksum == checksum)
-        {
-            checksum = 0;
-
-            /* Manage Network Access */
-            if(server_device.packet_type->fixed_header.message_type < 10)
-            {
-
-                if(server_device.packet_type->fixed_header.message_type == COMMS_JOINREQ_MESSAGE)
-                {
-                    buffer.flag_state = JOINREQ_FLAG;
-
-                }
-
-                if(server_device.packet_type->fixed_header.message_type == COMMS_STATUS_MESSAGE)
-                {
-                    buffer.flag_state = STATUSMSG_FLAG;
-
-                }
-
-                /* Copy data to read buffer  */
-                memset(buffer.read_message, 0, sizeof(buffer.read_message));
-                memcpy(buffer.read_message, buffer.receive_message, server_device.packet_type->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
-
-            }
-        }
-
-        /* Clear receive buffer */
-        memset(buffer.receive_message, 0, sizeof(buffer.receive_message));
-
-        rx_index = 0;
-
-    }
-    else
-    {
-        rx_index++;
-
-    }
-
+    comms_server_recv_it(wireless_network, &buffer, &rx_index);
 
 }
 
