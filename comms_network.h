@@ -73,9 +73,6 @@
 /******************************************************************************/
 
 
-/* Wireless network SYNC Message structure Declaration */
-typedef struct _sync_packet sync_packet_t;
-
 
 
 /* Network Device Configuration Structure for Server and Client */
@@ -97,9 +94,9 @@ typedef struct _device_config
 /* Network slot values for slotted network */
 typedef enum _network_slot
 {
-    NET_SYNC_SLOT      = COMMS_SYNC_SLOTNUM,      /*!< Sever Sync slot number,       dynamic */
-    NET_ACCESS_SLOT    = COMMS_ACCESS_SLOTNUM,    /*!< Server Access Slot number,    fixed   */
-    NET_BROADCAST_SLOT = COMMS_BROADCAST_SLOTNUM  /*!< Server Broadcast Slot number, fixed   */
+    NET_SYNC_SLOT      = COMMS_SYNC_SLOTNUM,      /*!< Sever Sync slot number       */
+    NET_ACCESS_SLOT    = COMMS_ACCESS_SLOTNUM,    /*!< Server Access Slot number    */
+    NET_BROADCAST_SLOT = COMMS_BROADCAST_SLOTNUM  /*!< Server Broadcast Slot number */
 
 }network_slot_t;
 
@@ -128,21 +125,22 @@ typedef struct _application_flags
     uint8_t application_message_ready : 1;  /*!< App message ready flag, user enabled                  */
     uint8_t network_message_ready     : 1;  /*!< Network message ready flag, client/ server controlled */
 
-}application_flags_t;
+}app_flags_t;
+
 
 
 /* Network buffer structure for message passing between network and user applications */
 typedef struct _comms_network_buffer
 {
-    char receive_message[COMMS_MESSAGE_LENGTH];      /*!< Receive message buffer all messages                       */
-    char read_message[COMMS_MESSAGE_LENGTH];         /*!< Read message buffer for valid messages, filled by network */
-    application_flags_t application_data;            /*!< Application flag state structure                          */
-    char application_message[COMMS_MESSAGE_LENGTH];  /*!< Application message buffer, filled by application         */
-    char network_message[COMMS_MESSAGE_LENGTH];      /*!< Network message buffer, filled by network                 */
-    message_flags_t flag_state;                      /*!< Network message flag states                               */
-
+    app_flags_t     application_data;                           /*!< Application flag state structure                          */
+    char            receive_message[COMMS_MESSAGE_LENGTH];      /*!< Receive message buffer all messages                       */
+    char            read_message[COMMS_MESSAGE_LENGTH];         /*!< Read message buffer for valid messages, filled by network */
+    char            application_message[COMMS_MESSAGE_LENGTH];  /*!< Application message buffer, filled by application         */
+    char            network_message[COMMS_MESSAGE_LENGTH];      /*!< Network message buffer, filled by network                 */
+    message_flags_t flag_state;                                 /*!< Network message flag states                               */
 
 }comms_network_buffer_t;
+
 
 
 /* Network operations callback structure */
@@ -171,12 +169,19 @@ typedef struct _network_operations
 
 
 
+/* Network Header structure declaration */
+typedef struct _network_message network_message_t;
+
+/* SYNC Message structure declaration */
+typedef struct _sync_packet sync_packet_t;
+
+
 /* Network Access Control Handle */
 typedef struct _access_control
 {
-    sync_packet_t *sync_message;             /*!< Sync message packet structure */
-
-    network_operations_t *network_commands;  /*!< Network operations structure  */
+    network_message_t    *packet_type;       /*!< Network message packet structure */
+    sync_packet_t        *sync_message;      /*!< Sync message packet structure    */
+    network_operations_t *network_commands;  /*!< Network operations structure     */
 
 }access_control_t;
 
@@ -222,6 +227,18 @@ device_config_t* create_server_device(char *mac_address, uint16_t network_id, ui
  * @retval int8_t           : error: -1, success: length of message
  *******************************************************************/
 int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t message_length);
+
+
+
+
+/************************************************************************
+ * @brief  Function to receive message through network hardware interrupt
+ * @param  *network         : reference to network handle structure
+ * @param  *message_buffer  : message buffer to be send
+ * @param  *read_index      : index of buffer loop
+ * @retval int8_t           : error: -2, success: length of message
+ ************************************************************************/
+int8_t comms_server_recv_it(access_control_t *network,comms_network_buffer_t *recv_buffer, uint8_t *read_index);
 
 
 
