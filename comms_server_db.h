@@ -77,6 +77,8 @@ typedef struct client_devices
     uint8_t client_number_of_slots;
     uint8_t client_state;
 
+    char    client_ip_address[4];
+
 }client_devices_t;
 
 

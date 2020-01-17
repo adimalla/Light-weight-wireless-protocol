@@ -75,6 +75,26 @@ typedef enum fsm_state_values
 
 
 
+
+/******************************************************************************/
+/*                                                                            */
+/*                              Private Functions                             */
+/*                                                                            */
+/******************************************************************************/
+
+
+static int8_t get_client_mac_address(char *client_mac_address, protocol_handle_t server)
+{
+    int8_t func_retval = 0;
+
+    strncpy(client_mac_address, server.joinrequest_msg->source_mac, 6);
+
+    return func_retval;
+}
+
+
+
+
 /******************************************************************************/
 /*                                                                            */
 /*                           API Functions                                    */
@@ -90,6 +110,7 @@ typedef enum fsm_state_values
  * @param  *server_device    : reference to device configuration structure
  * @param  *network_buffers  : reference to network buffers structure
  * @param  *client_devices   : reference to server client device DB table
+ * @param  server_mode       : sever device operation mode
  * @retval int8_t            : error = 0
  **************************************************************************/
 int8_t comms_start_server(access_control_t *wireless_network, device_config_t *server_device, comms_network_buffer_t *network_buffers,
@@ -97,6 +118,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 {
 
     int8_t func_retval = 1;
+    int8_t api_retval  = 0;
 
     protocol_handle_t server;
 
@@ -186,29 +208,35 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         /* Activity, Status LED function for receiving messages, access via user callback */
         comms_recv_status(wireless_network);
 
-
         server.joinrequest_msg = (void*)network_buffers->read_message;
 
-        /* Check network id */
-        if(server.joinrequest_msg->network_id == server_device->device_network_id && network_buffers->application_data.network_join_response == 1)
-        {
+        api_retval = comms_get_joinreq_data(server, *server_device, network_buffers->application_data.network_join_response);
 
+        if(api_retval)
+        {
             table_values = update_client_table(client_devices, &server, server_device);
-            if(table_values.table_retval == -1)
+
+            network_buffers->application_data.network_join_response = 0;
+
+            switch(server_mode)
             {
-                /* function parameter error */
-                fsm_state = SYNC_STATE;
-            }
-            else
-            {
-                /* Set network message flag read and network message in gateway mode */
+
+            case WI_LOCAL_SERVER:
 
                 /* Set timer to broadcast slot */
                 comms_network_set_timer(wireless_network, server_device, NET_BROADCAST_SLOT);
 
                 fsm_state = JOINRESP_STATE;
 
-                network_buffers->application_data.network_join_response = 0;
+                break;
+
+            case WI_GATEWAY_SERVER:
+
+                /* Set network message flag read and network message in gateway mode */
+                network_buffers->application_data.network_message_ready = 1;
+
+                break;
+
             }
 
         }
@@ -233,7 +261,6 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
         /* Activity, Status LED function for sending messages, access via user callback */
         comms_send_status(wireless_network);
-
 
         /* send join response at broadcast slot and reset to updated slot */
 
@@ -279,25 +306,28 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
             /* get destination client and payload from status */
             comms_get_status_message(status_message_buffer, &source_client_id, &destination_client_id, server);
 
-            /* handle server message condition (not done) */
-            if(destination_client_id == 1)
+            if(server_mode == WI_LOCAL_SERVER)
             {
-                /* calibrate timer to broadcast message */
-                //set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BROADCAST_SLOTNUM);
+                /* handle server message condition (not done) */
+                if(destination_client_id == 1)
+                {
+                    /* calibrate timer to broadcast message */
+                    //set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BROADCAST_SLOTNUM);
 
-                fsm_state = CONTROLMSG_STATE;
+                    fsm_state = CONTROLMSG_STATE;
 
-            }
-            else
-            {
-                /* search table for */
-                read_client_table(destination_mac_addr, &client_id, client_devices, destination_client_id - 4);
+                }
+                else
+                {
+                    /* search table for */
+                    read_client_table(destination_mac_addr, &client_id, client_devices, destination_client_id - 4);
 
-                /* Set timer to broadcast slot */
-                comms_network_set_timer(wireless_network, server_device, NET_BROADCAST_SLOT);
+                    /* Set timer to broadcast slot */
+                    comms_network_set_timer(wireless_network, server_device, NET_BROADCAST_SLOT);
 
-                fsm_state = CONTROLMSG_STATE;
+                    fsm_state = CONTROLMSG_STATE;
 
+                }
             }
 
         }

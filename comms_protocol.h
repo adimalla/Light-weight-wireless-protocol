@@ -372,6 +372,18 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
 
 
 
+/****************************************************************************
+ * @brief  Function to check/get JOINREQ message data
+ * @param  server              : reference to the protocol handle structure
+ * @param  server_device       : reference to the device structure
+ * #param  join_response_state : state of join response flag
+ * @retval int8_t              : error: -10, success: 4
+ ****************************************************************************/
+int8_t comms_get_joinreq_data(protocol_handle_t server, device_config_t server_device, int8_t joinresponse_state);
+
+
+
+
 int8_t comms_statusack_message(protocol_handle_t *client, device_config_t device, int8_t client_id, uint8_t destination_client_id);
 
 

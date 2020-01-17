@@ -99,7 +99,7 @@ typedef enum device_return_codes
  * @retval int8_t : checksum
  ********************************************************/
 int8_t static comms_checksum(char *data, uint8_t offset, uint8_t size)
-{
+                {
     int8_t i = 0;
     uint8_t checksum = 0;
 
@@ -109,7 +109,7 @@ int8_t static comms_checksum(char *data, uint8_t offset, uint8_t size)
     }
 
     return checksum;
-}
+                }
 
 
 
@@ -455,8 +455,6 @@ int8_t comms_get_contrl_data(char *message_buffer, uint8_t* source_client_id, pr
 
 
 
-
-
 /*******************************************************************
  * @brief  Function to set JOINRESP message status
  * @param  server       : reference to the protocol handle structure
@@ -675,6 +673,40 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
 
     return func_retval;
 }
+
+
+
+/****************************************************************************
+ * @brief  Function to check/get JOINREQ message data
+ * @param  server              : reference to the protocol handle structure
+ * @param  server_device       : reference to the device structure
+ * #param  join_response_state : state of join response flag
+ * @retval int8_t              : error: -10, success: 4
+ ****************************************************************************/
+int8_t comms_get_joinreq_data(protocol_handle_t server, device_config_t server_device, int8_t joinresponse_state)
+{
+    int8_t  func_retval = 0;
+
+    if(server.joinrequest_msg == NULL)
+    {
+        func_retval = -10;
+    }
+    else
+    {
+        /* Check network id */
+        if( (server.joinrequest_msg->network_id == server_device.device_network_id) && (joinresponse_state == 1) )
+        {
+            /* Can be used for as JOINRESP fsm state value */
+            func_retval = 4;
+        }
+
+    }
+
+    return func_retval;
+}
+
+
+
 
 
 
