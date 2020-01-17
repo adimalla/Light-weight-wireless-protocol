@@ -140,7 +140,6 @@ void gpioPortFIsr(void)
 
 
 
-
 void uart1ISR(void)
 {
     protocol_handle_t server_device;
@@ -282,8 +281,6 @@ int8_t clear_led_status(void)
 
     return 0;
 }
-
-
 
 
 

@@ -123,7 +123,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
     protocol_handle_t server;
 
     char    send_message_buffer[32]                        = {0};
-    char    destination_mac_addr[COMMS_NET_MACADDR_LENGTH] = {0};
+    char    destination_mac_addr[COMMS_MACADDR_SIZE] = {0};
 
     uint8_t message_length = 0;
 

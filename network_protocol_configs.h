@@ -53,11 +53,28 @@
 #define PREAMBLE_CONTRL     0xCC22
 #define PREAMBLE_STATUSACK  0xCC33
 
+
+/* Message number defines */
+#define COMMS_SYNC_MESSAGE       1
+#define COMMS_JOINREQ_MESSAGE    2
+#define COMMS_JOINRESP_MESSAGE   3
+#define COMMS_STATUS_MESSAGE     4
+#define COMMS_STATUSACK_MESSAGE  5
+#define COMMS_CONTRL_MESSAGE     6
+#define COMMS_EVNT_MESSAGE       7
+#define COMMS_HIBERNATE_MESSAGE  8
+#define COMMS_UNJOIN_MESSAGE     9
+
+
+
+
 /* Network slot defines */
+/* Server slot number is a ranked slot number, also used for sync message slot, changes with number of device */
 #define COMMS_SERVER_SLOTNUM        1
 #define COMMS_ACCESS_SLOTNUM        2
 #define COMMS_BROADCAST_SLOTNUM     3
-#define COMMS_SYNC_SLOTNUM          COMMS_SERVER_SLOTNUM  /* Server slot number is a ranked slot number, also used for sync message slot, changes with number of device */
+#define COMMS_SYNC_SLOTNUM          COMMS_SERVER_SLOTNUM
+#define COMMS_MESSAGE_LENGTH        32
 
 
 /* Generic message size defines */
@@ -73,15 +90,19 @@
 #define COMMS_MESSAGE_TERMINATOR        "\rt"
 #define COMMS_TERMINATOR_LENGTH         2
 
+
 /* Sync Message size defines  */
 #define COMMS_ACCESS_SLOT_SIZE  1
 #define COMMS_SLOT_TIME_SIZE    2
 
+
 /* JOINREQ defines */
 #define COMMS_JOIN_OPTONS_SIZE  1
 
+
 /* STATUS, CONTRL and EVNT defines */
 #define COMMS_DESTINATION_DEVICEID_SIZE 1
+
 
 /* Server related defines */
 #define COMMS_ACCESS_SLOT_SIZE     1
@@ -91,9 +112,8 @@
 #define MAX_SLOT_TIME              1000
 
 
-#define COMMS_SOURCE_DEVICEID_SIZE      1
-
 /* STATUS, CONTRL and EVNT defines */
+#define COMMS_SOURCE_DEVICEID_SIZE      1
 #define COMMS_DESTINATION_DEVICEID_SIZE 1
 
 

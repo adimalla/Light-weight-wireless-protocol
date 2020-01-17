@@ -71,17 +71,6 @@
 #define PAYLOAD_LENGTH  20
 
 
-#define COMMS_SYNC_MESSAGE       1
-#define COMMS_JOINREQ_MESSAGE    2
-#define COMMS_JOINRESP_MESSAGE   3
-#define COMMS_STATUS_MESSAGE     4
-#define COMMS_STATUSACK_MESSAGE  5
-#define COMMS_CONTRL_MESSAGE     6
-#define COMMS_EVNT_MESSAGE       7
-#define COMMS_HIBERNATE_MESSAGE  8
-#define COMMS_UNJOIN_MESSAGE     9
-
-
 
 /******************************************************************************/
 /*                                                                            */
@@ -96,7 +85,7 @@ typedef enum comms_message_status_codes
     JOINRESP_ACK      = 0,  /*!< */
     JOINRESP_NACK     = 1,  /*!< */
     JOINREQ_DUP       = 2,  /*!< */
-    JOINRESP_DUP      = 2,
+    JOINRESP_DUP      = 2,  /*!< */
     CLIENT_ECHO       = 3,  /*!< */
     CLIENT_NOT_FOUND  = 4,  /*!< */
     MESSSAGE_OK       = 5,  /*!< */

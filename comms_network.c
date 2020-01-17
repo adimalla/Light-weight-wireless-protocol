@@ -55,8 +55,6 @@
 
 
 
-#define WI_NETWORK_SYNC_MESSAGE       1
-
 
 
 /******************************************************************************/
@@ -66,28 +64,49 @@
 /******************************************************************************/
 
 
+/* Network header */
 typedef struct _wi_network_header
 {
-    uint8_t message_status    : 4;  /*!< (LSB)*/
-    uint8_t message_type      : 4;  /*!< (MSB)*/
-    uint8_t message_length;         /*!< */
-    uint8_t message_checksum;       /*!< */
+    uint8_t message_status    : 4;  /*!< (LSB) Message Status  */
+    uint8_t message_type      : 4;  /*!< (MSB) Type of Message */
+    uint8_t message_length;         /*!< Length of message     */
+    uint8_t message_checksum;       /*!< Message Checksum      */
 
 }wi_header_t;
 
 
-
+/* Sync Message structure */
 struct _sync_packet
 {
-    char        preamble[COMMS_NET_PREAMBLE_LENGTH];  /*!< */
-    wi_header_t fixed_header;                         /*!< */
-    uint16_t    network_id;                           /*!< */
-    uint8_t     message_slot_number;                  /*!< */
-    uint16_t    slot_time;                            /*!< */
-    uint8_t     access_slot;                          /*!< */
-    char        payload[COMMS_NET_PAYLOAD_LENGTH];    /*!< */
+    char        preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
+    wi_header_t fixed_header;                    /*!< Network header             */
+    uint16_t    network_id;                      /*!< Network ID                 */
+    uint8_t     message_slot_number;             /*!< Message slot number        */
+    uint16_t    slot_time;                       /*!< Time interval of each slot */
+    uint8_t     access_slot;                     /*!< Server Access number       */
+    char        payload[COMMS_PREAMBLE_LENTH];   /*!< Message payload            */
 
 };
+
+
+
+typedef enum _network_api_error_codes
+{
+
+    COMMS_SEND_ERROR        = -1,
+    COMMS_RECV_ERROR        = -2,
+    COMMS_SETTIMER_ERROR    = -3,
+    COMMS_RESETTIMER_ERROR  = -4,
+    COMMS_CLRINTRUPT_ERROR  = -5,
+    COMMS_REQTIMEOUT_ERROR  = -6,
+    COMMS_RESPTIMEOUT_ERROR = -7,
+    COMMS_SYNCSTATUS_ERROR  = -8,
+    COMMS_SENDSTATUS_ERROR  = -9,
+    COMMS_RECVSTATUS_ERROR  = -10,
+    COMMS_CLRSTATUS_ERROR   = -11,
+    COMMS_GETSYNC_ERROR     = -12
+
+}net_api_retval_t;
 
 
 
@@ -102,7 +121,7 @@ struct _sync_packet
 
 /* Implementation of glibc reentrant strtok Copyright (C) 1991-2019 GNU C Library */
 
-static char *ti_strtok_r (char *s, const char *delim, char **save_ptr)
+static char *api_strtok_r (char *s, const char *delim, char **save_ptr)
 {
     char *end;
     if (s == NULL)
@@ -158,7 +177,7 @@ static int8_t set_mac_address(char *device_mac, char *mac_address)
     rest_ptr = mac_address_copy;
 
     /* strtok_r function for non glibc compliant code */
-    while( (token = ti_strtok_r(rest_ptr, ":", &rest_ptr)) )
+    while( (token = api_strtok_r(rest_ptr, ":", &rest_ptr)) )
     {
         /* Convert to hex */
         device_mac[index] = strtol(token, NULL, 16);
@@ -180,7 +199,7 @@ static int8_t set_mac_address(char *device_mac, char *mac_address)
 /******************************************************************************/
 
 
-
+/* Send/Receive function operations */
 __attribute__((weak)) int8_t send_message(char *message_buffer, uint8_t length)
 {
 
@@ -194,7 +213,7 @@ __attribute__((weak)) int8_t recv_message(char *message_buffer, uint8_t length)
     return 0;
 }
 
-
+/* Transmit timer and receive interrupt operations */
 __attribute__((weak)) int8_t set_timer(uint16_t device_slot_time, uint8_t device_slot_number)
 {
 
@@ -209,7 +228,32 @@ __attribute__((weak)) int8_t reset_timer(void)
 }
 
 
+__attribute__((weak)) int8_t clear_receive_interrupt(void)
+{
 
+    return 0;
+}
+
+
+
+
+/* Timeout operations */
+__attribute__((weak)) int8_t request_timeout(uint8_t timeout_seconds)
+{
+
+    return 0;
+}
+
+
+__attribute__((weak)) int8_t response_timeout(uint8_t timeout_seconds)
+{
+
+    return 0;
+}
+
+
+
+/* Network activity status operations */
 __attribute__((weak)) int8_t sync_status(void)
 {
 
@@ -261,26 +305,32 @@ access_control_t* create_network_handle(network_operations_t *network_ops)
     network.network_commands = network_ops;
 
     /* Configure weak implementations */
-    if(network_ops->send_message == NULL)
+
+    if(network_ops->send_message == NULL || network_ops->recv_message == NULL)
+    {
         network_ops->send_message = send_message;
-
-    if(network_ops->recv_message == NULL)
         network_ops->recv_message = recv_message;
+    }
 
-    if(network_ops->set_timer == NULL)
-        network_ops->set_timer = set_timer;
+    if(network_ops->set_timer == NULL || network_ops->reset_timer == NULL || network_ops->clear_recv_interrupt == NULL)
+    {
+        network_ops->set_timer            = set_timer;
+        network_ops->reset_timer          = reset_timer;
+        network_ops->clear_recv_interrupt = clear_receive_interrupt;
+    }
 
-    if(network_ops->reset_timer == NULL)
-        network_ops->reset_timer = reset_timer;
+    if(network_ops->request_timeout == NULL || network_ops->response_timeout == NULL)
+    {
+        network_ops->request_timeout  = request_timeout;
+        network_ops->response_timeout = response_timeout;
+    }
 
-    if(network_ops->sync_activity_status == NULL)
+    if(network_ops->sync_activity_status == NULL || network_ops->send_activity_status == NULL || network_ops->recv_activity_status == NULL)
+    {
         network_ops->sync_activity_status = sync_status;
-
-    if(network_ops->send_activity_status == NULL)
         network_ops->send_activity_status = send_status;
-
-    if(network_ops->recv_activity_status == NULL)
         network_ops->recv_activity_status = recv_status;
+    }
 
     if(network_ops->clear_status == NULL)
         network_ops->clear_status = clear_status;
@@ -305,22 +355,29 @@ device_config_t* create_server_device(char *mac_address, uint16_t network_id, ui
 
     static device_config_t server_device;
 
-    /* Fixed Initializations */
+    if(device_slot_time == 0 || total_slots == 0 || network_id == 0 || mac_address == NULL)
+    {
+        return NULL;
+    }
+    else
+    {
+        /* Fixed Initializations */
 
-    set_mac_address(server_device.device_mac, mac_address);
+        set_mac_address(server_device.device_mac, mac_address);
 
-    server_device.device_network_id = network_id;
+        server_device.device_network_id = network_id;
 
-    server_device.device_slot_number = COMMS_SERVER_SLOTNUM;
+        server_device.device_slot_number = COMMS_SERVER_SLOTNUM;
 
-    server_device.device_slot_time = device_slot_time;
+        server_device.device_slot_time = device_slot_time;
 
+        /* Values will change accordingly */
 
-    /* Values will change accordingly */
+        /* Avoid reinitization of slots if called in ISR, (new object is created at every call) */
+        if(total_slots > server_device.total_slots)
+            server_device.total_slots = total_slots;
 
-    /* Avoid reinitization of slots if called in ISR, (new object is created at every call) */
-    if(total_slots > server_device.total_slots)
-        server_device.total_slots = total_slots;
+    }
 
     return &server_device;
 }
@@ -342,7 +399,7 @@ int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t messa
 
     if(message_buffer == NULL || message_length == 0)
     {
-        func_retval = -1;
+        func_retval = COMMS_SEND_ERROR;
     }
     else
     {
@@ -378,7 +435,7 @@ int8_t comms_network_set_timer(access_control_t *network, device_config_t *devic
 
     if(device->device_slot_time == 0 || device->total_slots == 0)
     {
-        func_retval = -3;
+        func_retval = COMMS_SETTIMER_ERROR;
     }
     else
     {
@@ -412,7 +469,7 @@ int8_t comms_network_set_timer(access_control_t *network, device_config_t *devic
 
         default:
 
-            func_retval = -3;
+            func_retval = COMMS_SETTIMER_ERROR;
 
             break;
 
@@ -460,7 +517,7 @@ int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size)
 /************************************************************
  * @brief  Function to enable sync activity status
  * @param  *network  : reference to network handle structure
- * @retval int8_t    : error = -5, success = 0
+ * @retval int8_t    : error = -8, success = 0
  ************************************************************/
 int8_t comms_sync_status(access_control_t *network)
 {
@@ -468,7 +525,7 @@ int8_t comms_sync_status(access_control_t *network)
 
     if(network == NULL)
     {
-        func_retval = -5;
+        func_retval = COMMS_SYNCSTATUS_ERROR;
     }
     else
     {
@@ -486,7 +543,7 @@ int8_t comms_sync_status(access_control_t *network)
 /************************************************************
  * @brief  Function to enable send activity status
  * @param  *network  : reference to network handle structure
- * @retval int8_t    : error = -6, success = 0
+ * @retval int8_t    : error = -9, success = 0
  ************************************************************/
 int8_t comms_send_status(access_control_t *network)
 {
@@ -494,7 +551,7 @@ int8_t comms_send_status(access_control_t *network)
 
     if(network == NULL)
     {
-        func_retval = -6;
+        func_retval = COMMS_SENDSTATUS_ERROR;
     }
     else
     {
@@ -511,7 +568,7 @@ int8_t comms_send_status(access_control_t *network)
 /************************************************************
  * @brief  Function to enable receive activity status
  * @param  *network  : reference to network handle structure
- * @retval int8_t    : error = -7, success = 0
+ * @retval int8_t    : error = -10, success = 0
  ************************************************************/
 int8_t comms_recv_status(access_control_t *network)
 {
@@ -519,7 +576,7 @@ int8_t comms_recv_status(access_control_t *network)
 
     if(network == NULL)
     {
-        func_retval = -7;
+        func_retval = COMMS_RECVSTATUS_ERROR;
     }
     else
     {
@@ -536,7 +593,7 @@ int8_t comms_recv_status(access_control_t *network)
 /************************************************************
  * @brief  Function to enable clear activity status
  * @param  *network  : reference to network handle structure
- * @retval int8_t    : error = -8, success = 0
+ * @retval int8_t    : error = -11, success = 0
  ************************************************************/
 int8_t comms_clear_activity(access_control_t *network)
 {
@@ -544,7 +601,7 @@ int8_t comms_clear_activity(access_control_t *network)
 
     if(network == NULL)
     {
-        func_retval = -8;
+        func_retval = COMMS_CLRSTATUS_ERROR;
     }
     else
     {
@@ -573,7 +630,7 @@ int8_t comms_clear_activity(access_control_t *network)
  * @param  *client_device   : reference to client device config structure
  * @param  *message_payload : message payload from sync message
  * @param  network          : network handle structure
- * @retval int8_t           : error: -5, success: 0
+ * @retval int8_t           : error: -12, success: 0
  *************************************************************************/
 int8_t get_sync_data(device_config_t *client_device, char *message_payload ,access_control_t network)
 {
@@ -581,7 +638,7 @@ int8_t get_sync_data(device_config_t *client_device, char *message_payload ,acce
 
     if(client_device == NULL || network.sync_message == NULL || message_payload == NULL)
     {
-        func_retval = -5;
+        func_retval = COMMS_GETSYNC_ERROR;
     }
     else
     {
@@ -648,7 +705,7 @@ uint8_t comms_network_sync_message(access_control_t *network, uint16_t network_i
             network->sync_message->preamble[0] = (PREAMBLE_SYNC >> 8) & 0xFF;
             network->sync_message->preamble[1] = (PREAMBLE_SYNC >> 0) & 0xFF;
 
-            network->sync_message->fixed_header.message_type = WI_NETWORK_SYNC_MESSAGE;
+            network->sync_message->fixed_header.message_type = COMMS_SYNC_MESSAGE;
 
             network->sync_message->message_slot_number = COMMS_SERVER_SLOTNUM;
 

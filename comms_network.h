@@ -63,7 +63,6 @@
 
 #define COMMS_NET_PREAMBLE_LENGTH      2
 #define COMMS_NET_PAYLOAD_LENGTH       20
-#define COMMS_NET_MACADDR_LENGTH       6
 #define COMMS_NET_MESSAGE_BUFFER_SIZE  32
 
 
@@ -79,91 +78,94 @@ typedef struct _sync_packet sync_packet_t;
 
 
 
-/* network slot values */
-typedef enum _network_slot
-{
-    NET_SYNC_SLOT      = COMMS_SYNC_SLOTNUM,
-    NET_ACCESS_SLOT    = COMMS_ACCESS_SLOTNUM,
-    NET_BROADCAST_SLOT = COMMS_BROADCAST_SLOTNUM
-
-}network_slot_t;
-
-
-
-
-/* */
+/* Network Device Configuration Structure for Server and Client */
 typedef struct _device_config
 {
-    char      device_mac[COMMS_NET_MACADDR_LENGTH];  /*!< */
-    uint16_t  device_network_id;                     /*!< */
-    uint8_t   network_access_slot;                   /*!< */
-    uint8_t   device_slot_number;                    /*!< */
-    uint16_t  device_slot_time;                      /*!< */
-    uint8_t   total_slots;                           /*!< */
-    uint8_t   network_joined;                        /*!< */
-    uint8_t   device_count;                          /*!< */
+    char      device_mac[COMMS_MACADDR_SIZE];  /*!< Device Mac Address, user defined                                     */
+    uint16_t  device_network_id;               /*!< Device Network ID, user defined                                      */
+    uint8_t   network_access_slot;             /*!< Device Access Slot number, configs header file defined               */
+    uint8_t   device_slot_number;              /*!< Device Slot Number, user defined                                     */
+    uint16_t  device_slot_time;                /*!< Time of each slot interval, user defined                             */
+    uint8_t   total_slots;                     /*!< Total number of slots, user defined, changed by server on runtime    */
+    uint8_t   network_joined;                  /*!< Network Joined State, changed by client on runtime                   */
+    uint8_t   device_count;                    /*!< Current number of device connected to the server, changes on runtime */
 
 }device_config_t;
 
 
 
+/* Network slot values for slotted network */
+typedef enum _network_slot
+{
+    NET_SYNC_SLOT      = COMMS_SYNC_SLOTNUM,      /*!< Sever Sync slot number,       dynamic */
+    NET_ACCESS_SLOT    = COMMS_ACCESS_SLOTNUM,    /*!< Server Access Slot number,    fixed   */
+    NET_BROADCAST_SLOT = COMMS_BROADCAST_SLOTNUM  /*!< Server Broadcast Slot number, fixed   */
 
+}network_slot_t;
+
+
+
+/* Network buffer message flags */
 typedef enum _message_flags
 {
-    CLEAR_FLAG        = 0,
-    SYNC_FLAG         = 1,
-    JOINREQ_FLAG      = 2,
-    JOINRESP_FLAG     = 3,
-    STATUSMSG_FLAG    = 4,
-    CONTRLMSG_FLAG    = 6,
+    CLEAR_FLAG        = 0,  /*!< clear message flag              */
+    SYNC_FLAG         = 1,  /*!< sync message get/send flag      */
+    JOINREQ_FLAG      = 2,  /*!< joinreq message get/send flag   */
+    JOINRESP_FLAG     = 3,  /*!< joinresp message get/send flag  */
+    STATUSMSG_FLAG    = 4,  /*!< statusmsg message get/send flag */
+    STATUSACK_FLAG    = 5,  /*!< statusack message get/send flag */
+    CONTRLMSG_FLAG    = 6   /*!< contrlmsg message get/send flag */
 
 }message_flags_t;
 
 
-
-
+/* Application Flags bit field structure */
 typedef struct _application_flags
 {
-    uint8_t network_join_request      : 1;
-    uint8_t network_join_response     : 1;
-    uint8_t network_joined_state      : 1;
-    uint8_t application_message_ready : 1;
-    uint8_t network_message_ready     : 1;
+    uint8_t network_join_request      : 1;  /*!< Network join request flag, user enabled               */
+    uint8_t network_join_response     : 1;  /*!< Network join response flag, user enabled              */
+    uint8_t network_joined_state      : 1;  /*!< Network joined state, client controlled               */
+    uint8_t application_message_ready : 1;  /*!< App message ready flag, user enabled                  */
+    uint8_t network_message_ready     : 1;  /*!< Network message ready flag, client/ server controlled */
 
 }application_flags_t;
 
 
-
+/* Network buffer structure for message passing between network and user applications */
 typedef struct _comms_network_buffer
 {
-    char receive_message[COMMS_NET_MESSAGE_BUFFER_SIZE];
-    char read_message[COMMS_NET_MESSAGE_BUFFER_SIZE];
-
-    application_flags_t application_data;
-
-    char application_message[COMMS_NET_MESSAGE_BUFFER_SIZE];
-    char network_message[COMMS_NET_MESSAGE_BUFFER_SIZE];
-
-    message_flags_t flag_state;
+    char receive_message[COMMS_MESSAGE_LENGTH];      /*!< Receive message buffer all messages                       */
+    char read_message[COMMS_MESSAGE_LENGTH];         /*!< Read message buffer for valid messages, filled by network */
+    application_flags_t application_data;            /*!< Application flag state structure                          */
+    char application_message[COMMS_MESSAGE_LENGTH];  /*!< Application message buffer, filled by application         */
+    char network_message[COMMS_MESSAGE_LENGTH];      /*!< Network message buffer, filled by network                 */
+    message_flags_t flag_state;                      /*!< Network message flag states                               */
 
 
 }comms_network_buffer_t;
 
 
-
-/* Network operations handle */
+/* Network operations callback structure */
 typedef struct _network_operations
 {
-    int8_t (*send_message)(char *message_buffer, uint8_t message_length);
-    int8_t (*recv_message)(char *message_buffer, uint8_t message_length);
-    int8_t (*set_timer)(uint16_t device_slot_time, uint8_t device_slot_number);
-    int8_t (*reset_timer)(void);
-    int8_t (*request_timeout)(uint8_t timeout_seconds);
-    int8_t (*response_timeout)(uint8_t timeout_seconds);
-    int8_t (*sync_activity_status)(void);
-    int8_t (*send_activity_status)(void);
-    int8_t (*recv_activity_status)(void);
-    int8_t (*clear_status)(void);
+    /* Send/Receive function operations */
+    int8_t (*send_message)(char *message_buffer, uint8_t message_length);        /*!< Send function           */
+    int8_t (*recv_message)(char *message_buffer, uint8_t message_length);        /*!< Receive function        */
+
+    /* Transmit timer and receive interrupt operations */
+    int8_t (*set_timer)(uint16_t device_slot_time, uint8_t device_slot_number);  /*!< Set timer function      */
+    int8_t (*reset_timer)(void);                                                 /*!< Reset timer             */
+    int8_t (*clear_recv_interrupt)(void);                                        /*!< Clear receive interrupt */
+
+    /* Timeout operations */
+    int8_t (*request_timeout)(uint8_t timeout_seconds);                          /*!< Request timeout         */
+    int8_t (*response_timeout)(uint8_t timeout_seconds);                         /*!< Response timeout        */
+
+    /* Network activity status operations */
+    int8_t (*sync_activity_status)(void);                                        /*!< Sync status             */
+    int8_t (*send_activity_status)(void);                                        /*!< Send status             */
+    int8_t (*recv_activity_status)(void);                                        /*!< Read status             */
+    int8_t (*clear_status)(void);                                                /*!< Clear status            */
 
 }network_operations_t;
 
@@ -172,9 +174,9 @@ typedef struct _network_operations
 /* Network Access Control Handle */
 typedef struct _access_control
 {
-    sync_packet_t  *sync_message;  /*!< */
+    sync_packet_t *sync_message;             /*!< Sync message packet structure */
 
-    network_operations_t *network_commands;
+    network_operations_t *network_commands;  /*!< Network operations structure  */
 
 }access_control_t;
 
@@ -236,6 +238,18 @@ int8_t comms_network_set_timer(access_control_t *network, device_config_t *devic
 
 
 
+/*********************************************************
+ * @brief  Function to calculate network message checksum
+ * @param  data   : message data
+ * @param  offset : starting offset for message data
+ * @param  size   : length of message
+ * @retval int8_t : checksum
+ *********************************************************/
+int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size);
+
+
+
+
 
 /******************************************************************************/
 /*                                                                            */
@@ -278,18 +292,6 @@ int8_t comms_recv_status(access_control_t *network);
  * @retval int8_t    : error = -8, success = 0
  ************************************************************/
 int8_t comms_clear_activity(access_control_t *network);
-
-
-
-/*********************************************************
- * @brief  Function to calculate network message checksum
- * @param  data   : message data
- * @param  offset : starting offset for message data
- * @param  size   : length of message
- * @retval int8_t : checksum
- *********************************************************/
-int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size);
-
 
 
 
