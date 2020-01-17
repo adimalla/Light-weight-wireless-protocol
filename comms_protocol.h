@@ -195,18 +195,8 @@ typedef struct contrl
 
 
 
-typedef struct _network_message
-{
-    char preamble[PREAMBLE_LENGTH];  /*!< */
-    comms_header_t fixed_header;     /*!< */
-
-}network_message_t;
-
-
-
 typedef struct wi_net_protocol_handle
 {
-    network_message_t *packet_type;       /*!< */
     joinreq_t         *joinrequest_msg;   /*!< */
     joinresp_t        *joinresponse_msg;  /*!< */
     status_t          *status_msg;        /*!< */
