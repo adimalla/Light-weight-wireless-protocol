@@ -89,7 +89,7 @@ struct _sync_packet
 };
 
 
-
+/* Network api error codes */
 typedef enum _network_api_error_codes
 {
 
@@ -345,7 +345,6 @@ access_control_t* create_network_handle(network_operations_t *network_ops)
 
     if(network_ops->clear_status == NULL)
         network_ops->clear_status = clear_status;
-
 
 
     return &network;
