@@ -176,21 +176,17 @@ void uart1ISR(void)
                 {
                     buffer.flag_state = JOINREQ_FLAG;
 
-                    /* Copy data to read buffer  */
-                    memset(buffer.read_message, 0, sizeof(buffer.read_message));
-                    memcpy(buffer.read_message, buffer.receive_message, server_device.packet_type->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
-
                 }
 
                 if(server_device.packet_type->fixed_header.message_type == COMMS_STATUS_MESSAGE)
                 {
                     buffer.flag_state = STATUSMSG_FLAG;
 
-                    /* Copy data to read buffer  */
-                    memset(buffer.read_message, 0, sizeof(buffer.read_message));
-                    memcpy(buffer.read_message, buffer.receive_message, server_device.packet_type->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
-
                 }
+
+                /* Copy data to read buffer  */
+                memset(buffer.read_message, 0, sizeof(buffer.read_message));
+                memcpy(buffer.read_message, buffer.receive_message, server_device.packet_type->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
 
             }
         }
