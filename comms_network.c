@@ -63,7 +63,6 @@
 /*                                                                            */
 /******************************************************************************/
 
-
 /* Network header */
 typedef struct _wi_network_header
 {
@@ -73,6 +72,15 @@ typedef struct _wi_network_header
     uint8_t message_checksum;       /*!< Message Checksum      */
 
 }wi_header_t;
+
+
+/* Network message structure */
+struct _network_message
+{
+    char        preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preample */
+    wi_header_t fixed_header;                    /*!< Network Header   */
+
+};
 
 
 /* Sync Message structure */
@@ -397,7 +405,7 @@ device_config_t* create_server_device(char *mac_address, uint16_t network_id, ui
 
 
 /***********************************************************************
- * @brief  Function to send sync message through network hardware
+ * @brief  Function to send message through network hardware
  * @param  *network         : reference to network handle structure
  * @param  *message_buffer  : message buffer to be send
  * @param  message_length   : message_length
@@ -430,6 +438,81 @@ int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t messa
 
     return func_retval;
 }
+
+
+
+/************************************************************************
+ * @brief  Function to receive message through network hardware interrupt
+ * @param  *network         : reference to network handle structure
+ * @param  *message_buffer  : message buffer to be send
+ * @param  *read_index      : index of buffer loop
+ * @retval int8_t           : error: -2, success: length of message
+ ************************************************************************/
+int8_t comms_server_recv_it(access_control_t *network,comms_network_buffer_t *recv_buffer, uint8_t *read_index)
+{
+
+    int8_t func_retval =  0;
+
+    uint8_t checksum = 0;
+
+    /* Terminate the message on the message termination characters */
+    if(recv_buffer->receive_message[*read_index] == 't' && recv_buffer->receive_message[*read_index - 1] == '\r')
+    {
+
+        network->network_commands->clear_recv_interrupt();
+
+        network->packet_type = (void*)recv_buffer->receive_message;
+
+        /* Validate checksum, Length of fixed header + preamble = 5 */
+        checksum = comms_network_checksum((char*)recv_buffer->receive_message, 5, *read_index + 1);
+
+        *read_index = 0;
+
+        if(network->packet_type->fixed_header.message_checksum == checksum)
+        {
+            checksum = 0;
+
+            /* Manage Network Access */
+            if(network->packet_type->fixed_header.message_type < 10)
+            {
+
+                if(network->packet_type->fixed_header.message_type == COMMS_JOINREQ_MESSAGE)
+                {
+                    recv_buffer->flag_state = JOINREQ_FLAG;
+
+                }
+
+                if(network->packet_type->fixed_header.message_type == COMMS_STATUS_MESSAGE)
+                {
+                    recv_buffer->flag_state = STATUSMSG_FLAG;
+
+                }
+
+                /* Copy data to read buffer  */
+                memset(recv_buffer->read_message, 0, sizeof(recv_buffer->read_message));
+                memcpy(recv_buffer->read_message, recv_buffer->receive_message, network->packet_type->fixed_header.message_length + \
+                       COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
+
+            }
+        }
+
+        /* Clear receive buffer */
+        memset(recv_buffer->receive_message, 0, sizeof(recv_buffer->receive_message));
+
+        *read_index = 0;
+    }
+    else
+    {
+        (*read_index)++;
+
+    }
+
+    /* return length of message */
+    func_retval = *read_index;
+
+    return func_retval;
+}
+
 
 
 
@@ -490,7 +573,6 @@ int8_t comms_network_set_timer(access_control_t *network, device_config_t *devic
 
     return func_retval;
 }
-
 
 
 
@@ -740,7 +822,7 @@ uint8_t comms_network_sync_message(access_control_t *network, uint16_t network_i
 
             message_length = network->sync_message->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
 
-            /* Calculate checksum */
+            /* Calculate checksum Length of fixed header + preamble = 5 */
             network->sync_message->fixed_header.message_checksum = comms_network_checksum((char*)network->sync_message, 5 , message_length);
 
             func_retval = message_length;
