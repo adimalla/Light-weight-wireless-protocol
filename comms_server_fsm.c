@@ -122,7 +122,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
     protocol_handle_t server;
 
-    char    send_message_buffer[32]                        = {0};
+    char    send_message_buffer[32]                  = {0};
     char    destination_mac_addr[COMMS_MACADDR_SIZE] = {0};
 
     uint8_t message_length = 0;
@@ -155,7 +155,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
     case MSG_READ_STATE:
 
-
+        /* Clear Activity Status */
         comms_clear_activity(wireless_network);
 
         fsm_state = network_buffers->flag_state;
@@ -164,15 +164,8 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
             fsm_state = SYNC_STATE;
 
         }
-        else
-        {
-            /* change state according to message type */
-            server.packet_type = (void*)network_buffers->read_message;
 
-            fsm_state = server.packet_type->fixed_header.message_type;
-
-        }
-
+        /* clear flag */
         network_buffers->flag_state = CLEAR_FLAG;
 
         break;
@@ -192,6 +185,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
         fsm_state = MSG_READ_STATE;
 
+        /* Not implemented */
         if(contrl_flag)
         {
             //set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BROADCAST_SLOTNUM);
@@ -344,7 +338,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         break;
 
 
-    case STATUSACK_STATE:
+    case STATUSACK_STATE: /* Not implemented / tested */
 
         memset(send_message_buffer, 0, sizeof(send_message_buffer));
 
@@ -352,7 +346,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
         message_length = comms_statusack_message(&server, *server_device, client_id, destination_client_id);
 
-        //uart_write(UART1, (char*)server.statusack_msg, message_length);
+        /* Call Send function */
 
         contrl_flag = 1;
 
