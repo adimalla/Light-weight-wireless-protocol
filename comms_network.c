@@ -306,34 +306,46 @@ access_control_t* create_network_handle(network_operations_t *network_ops)
 
     /* Configure weak implementations */
 
-    if(network_ops->send_message == NULL || network_ops->recv_message == NULL)
-    {
+    /* Set send receive default callbacks */
+    if(network_ops->send_message == NULL)
         network_ops->send_message = send_message;
+
+    if(network_ops->recv_message == NULL)
         network_ops->recv_message = recv_message;
-    }
 
-    if(network_ops->set_timer == NULL || network_ops->reset_timer == NULL || network_ops->clear_recv_interrupt == NULL)
-    {
-        network_ops->set_timer            = set_timer;
-        network_ops->reset_timer          = reset_timer;
+
+    /* Set send tx and rx timer and interrupt default callbacks */
+    if(network_ops->set_timer == NULL)
+        network_ops->set_timer = set_timer;
+
+    if(network_ops->reset_timer == NULL)
+        network_ops->reset_timer = reset_timer;
+
+    if(network_ops->clear_recv_interrupt == NULL)
         network_ops->clear_recv_interrupt = clear_receive_interrupt;
-    }
 
-    if(network_ops->request_timeout == NULL || network_ops->response_timeout == NULL)
-    {
+
+    /* Set send timeout default callbacks */
+    if(network_ops->request_timeout == NULL)
         network_ops->request_timeout  = request_timeout;
-        network_ops->response_timeout = response_timeout;
-    }
 
-    if(network_ops->sync_activity_status == NULL || network_ops->send_activity_status == NULL || network_ops->recv_activity_status == NULL)
-    {
+    if(network_ops->response_timeout == NULL)
+        network_ops->response_timeout = response_timeout;
+
+
+    /* Set activity default callbacks */
+    if(network_ops->sync_activity_status == NULL)
         network_ops->sync_activity_status = sync_status;
+
+    if(network_ops->send_activity_status == NULL)
         network_ops->send_activity_status = send_status;
+
+    if(network_ops->recv_activity_status == NULL)
         network_ops->recv_activity_status = recv_status;
-    }
 
     if(network_ops->clear_status == NULL)
         network_ops->clear_status = clear_status;
+
 
 
     return &network;
