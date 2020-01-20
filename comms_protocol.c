@@ -84,7 +84,7 @@ struct _joinreq
     char           source_mac[6];                   /*!< Source mac address         */
     char           destination_mac[6];              /*!< Destination mac address    */
     uint16_t       network_id;                      /*!< Network ID                 */
-    uint8_t        message_slot_number;             /*!< Device/Message slot number */
+    uint8_t        message_slot_number;             /*!< Device/Message slot number */ /*Can be used as requested id */
     join_opts_t    join_options;                    /*!< joinreq message options    */
     char           payload[COMMS_JOINREQ_PAYLOAD];  /*!< joinreq message payload    */
 
@@ -654,33 +654,46 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
     server->contrl_msg->preamble[0] = (PREAMBLE_CONTRL >> 8) & 0xFF;
     server->contrl_msg->preamble[1] = (PREAMBLE_CONTRL >> 0) & 0xFF;
 
+    server->contrl_msg->fixed_header.message_type = COMMS_CONTRL_MESSAGE;
 
+    server->contrl_msg->network_id            = device.device_network_id;
+    server->contrl_msg->message_slot_number   = device.device_slot_number;
+    server->contrl_msg->source_client_id      = source_id;
+    server->contrl_msg->destination_client_id = destination_id;
+
+    /* Client echo condition */
     if(destination_id == source_id)
     {
         server->contrl_msg->fixed_header.message_status = CLIENT_ECHO;
+
+        /* add payload */
+        strncpy(server->contrl_msg->payload, payload, payload_length);
+    }
+    /* Client not found condition */
+    else if(destination_id == 0)
+    {
+        server->contrl_msg->fixed_header.message_status = CLIENT_NOT_FOUND;
+        server->contrl_msg->source_client_id            = device.device_slot_number;
+        server->contrl_msg->destination_client_id       = source_id;
+
+        /* add NOT FOUND condition to payload */
+        payload_length = 16;
+        strncpy(server->contrl_msg->payload, "DEVICE NOT FOUND", payload_length);
+
     }
     else
     {
         server->contrl_msg->fixed_header.message_status = MESSSAGE_OK;
+
+        /* add payload */
+        strncpy(server->contrl_msg->payload, payload, payload_length);
     }
 
-
-    server->contrl_msg->fixed_header.message_type = COMMS_CONTRL_MESSAGE;
-
-    server->contrl_msg->network_id = device.device_network_id;
-    server->contrl_msg->message_slot_number = device.device_slot_number;
-
-    server->contrl_msg->source_client_id      = source_id;
-    server->contrl_msg->destination_client_id = destination_id;
-
-    /* add payload */
-    strncpy(server->contrl_msg->payload, payload, payload_length);
 
     /* add message terminator */
     payload_index = payload_length;
 
     strncpy(server->contrl_msg->payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
-
 
     /* Calculate remaining message length */
     server->contrl_msg->fixed_header.message_length = COMMS_NETWORK_ID_SIZE + COMMS_SLOTNUM_SIZE + COMMS_SOURCE_DEVICEID_SIZE + \

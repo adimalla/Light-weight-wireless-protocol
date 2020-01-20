@@ -334,13 +334,15 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
 
 
 
-/****************************************************************************
+/*****************************************************************************
  * @brief  Function to check/get JOINREQ message data
- * @param  server              : reference to the protocol handle structure
- * @param  server_device       : reference to the device structure
- * #param  join_response_state : state of join response flag
- * @retval int8_t              : error: -10, success: 4
- ****************************************************************************/
+ * @param *client_mac_address     : client mac address
+ * @param *client_requested_slots : requested slots by the client
+ * @param  server                 : reference to the protocol handle structure
+ * @param  server_device          : reference to the device structure
+ * #param  join_response_state    : state of join response flag
+ * @retval int8_t                 : error: -10, success: 4
+ *****************************************************************************/
 int8_t comms_get_joinreq_data(char *client_mac_address, uint8_t *client_requested_slots, protocol_handle_t server,
                               device_config_t server_device, int8_t joinresponse_state);
 
