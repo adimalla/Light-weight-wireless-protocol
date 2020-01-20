@@ -55,6 +55,9 @@
 #include "network_protocol_configs.h"
 
 
+
+
+
 /******************************************************************************/
 /*                                                                            */
 /*                  Data Structures and Defines                               */
@@ -63,22 +66,23 @@
 
 
 
+
+
+
+
 /* Protocol codes */
-typedef enum device_return_codes
+typedef enum _protocol_api_retval
 {
     DEV_FUNC_SUCCESS         =  1, /*!< */
-    SYNC_DATA_ERROR          = -1, /*!< */
-    CALIB_DATA_ERROR         = -2, /*!< */
     JOINREQ_OPTS_FUNC_ERROR  = -3, /*!< */
     JOINREQ_MAIN_FUNC_ERROR  = -4, /* Not Used */
     JOINRESP_FUNC_ERROR      = -5, /*!< */
     STATUSACK_FUNC_ERROR     = -6, /*!< */
     CONTRL_FUNC_ERROR        = -7, /*!< */
     JOINRESP_STATUS_ERROR    = -8, /*!< */
-    STATUSMSG_RECV_ERROR     =- 9,
+    STATUSMSG_RECV_ERROR     = -9, /*!< */
 
-}device_codes_t;
-
+}protocol_api_t;
 
 
 
@@ -98,9 +102,10 @@ typedef enum device_return_codes
  * @param  size   : length of message
  * @retval int8_t : checksum
  ********************************************************/
-int8_t static comms_checksum(char *data, uint8_t offset, uint8_t size)
-                {
+static int8_t comms_checksum(char *data, uint8_t offset, uint8_t size)
+{
     int8_t i = 0;
+
     uint8_t checksum = 0;
 
     for(i = offset; i < size; i++)
@@ -109,7 +114,7 @@ int8_t static comms_checksum(char *data, uint8_t offset, uint8_t size)
     }
 
     return checksum;
-                }
+}
 
 
 
@@ -196,7 +201,7 @@ uint8_t comms_joinreq_message(protocol_handle_t *client, device_config_t device,
         /* Configure slot options */
         if(requested_slots != 0)
         {
-            client->joinrequest_msg->join_options.request_slot_time  = 1;
+            client->joinrequest_msg->join_options.request_slots = 1;
         }
 
         /* !! Join Options set by comms_joinreq_options functions (externally called), else options are empty !! */
@@ -405,7 +410,6 @@ int8_t comms_get_statusack(protocol_handle_t client, uint16_t network_id, uint8_
 
 
 
-
 /*************************************************************************
  * @brief  Function to get CONTRL message
  * @param  message_buffer    : message data from CONTRL message
@@ -562,7 +566,6 @@ uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device
 
 
 
-
 /****************************************************************************************
  * @brief  Function to get STATUS Message from client
  * @param  message_buffer         : message data from status message
@@ -602,8 +605,6 @@ int8_t comms_get_status_message(char *client_payload, uint8_t *source_client_id,
 
     return func_retval;
 }
-
-
 
 
 
@@ -676,6 +677,7 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
 
 
 
+
 /****************************************************************************
  * @brief  Function to check/get JOINREQ message data
  * @param  server              : reference to the protocol handle structure
@@ -704,8 +706,6 @@ int8_t comms_get_joinreq_data(protocol_handle_t server, device_config_t server_d
 
     return func_retval;
 }
-
-
 
 
 
@@ -770,11 +770,6 @@ int8_t comms_statusack_message(protocol_handle_t *client, device_config_t device
 
     return func_retval;
 }
-
-
-
-
-
 
 
 

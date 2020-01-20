@@ -1,0 +1,5 @@
+
+
+version: wi_server_v1.1 (01/14/2020)
+
+> !! Sots redueced to 3 as total slots, client table now allocates slots as device = total_slots + 1;

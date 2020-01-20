@@ -45,6 +45,10 @@
 #define NETWORK_PROTOCOL_CONFIGS_H_
 
 
+#define ACTIVITY_OPERATIONS  1
+#define DEBUG_OPERATIONS     1
+
+
 /* Message Premable defines */
 #define PREAMBLE_SYNC       0xAA11
 #define PREAMBLE_JOINREQ    0xBB11
@@ -67,14 +71,13 @@
 
 
 
-
 /* Network slot defines */
 /* Server slot number is a ranked slot number, also used for sync message slot, changes with number of device */
 #define COMMS_SERVER_SLOTNUM        1
 #define COMMS_ACCESS_SLOTNUM        2
 #define COMMS_BROADCAST_SLOTNUM     3
 #define COMMS_SYNC_SLOTNUM          COMMS_SERVER_SLOTNUM
-#define COMMS_MESSAGE_LENGTH        32
+#define COMMS_MESSAGE_LENGTH        64
 
 
 /* Generic message size defines */
@@ -96,9 +99,10 @@
 #define COMMS_SLOT_TIME_SIZE    2
 
 
-/* JOINREQ defines */
+/* JOINREQ and JOINRESP defines */
 #define COMMS_JOIN_OPTONS_SIZE  1
-
+#define COMMS_JOINREQ_PAYLOAD   11
+#define COMMS_JOINRESP_PAYLOAD  12
 
 /* STATUS, CONTRL and EVNT defines */
 #define COMMS_DESTINATION_DEVICEID_SIZE 1

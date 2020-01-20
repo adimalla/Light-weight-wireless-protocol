@@ -95,77 +95,104 @@ typedef enum comms_message_status_codes
 
 
 
-
 /* Wireless Network Protocol Messages*/
 
-
+/* Network Header */
 typedef struct comms_header
 {
-    uint8_t message_status    : 4;  /*!< (LSB)*/
-    uint8_t message_type      : 4;  /*!< (MSB)*/
-    uint8_t message_length;         /*!< */
-    uint8_t message_checksum;       /*!< */
+    uint8_t message_status    : 4;  /*!< (LSB) message status */
+    uint8_t message_type      : 4;  /*!< (MSB) message type   */
+    uint8_t message_length;         /*!< Message length       */
+    uint8_t message_checksum;       /*!< Message checksum     */
 
 }comms_header_t;
 
 
 
-
-typedef struct join_opts
+/* JOINREQ options */
+typedef struct _join_options
 {
-    uint8_t reserved           : 4; /*!< (LSB) */
-    uint8_t request_slot_time  : 1; /*!< (MSB) */
-    uint8_t request_keep_alive : 1; /*!< (MSB) */
-    uint8_t quality_of_service : 2; /*!< (MSB) */
+    uint8_t reserved           : 4; /*!< (LSB) Reserved                                                */
+    uint8_t request_slots      : 1; /*!< (MSB) Request slots from server                               */
+    uint8_t request_keep_alive : 1; /*!< (MSB) Request keep alive at server                            */
+    uint8_t quality_of_service : 2; /*!< (MSB) Quality of service, Fire and Forget: 0, Atleast Once: 1 */
 
 }join_opts_t;
 
 
-
-typedef struct joinreq
+/* JOINREQ message structure */
+struct _joinreq
 {
-    char           preamble[PREAMBLE_LENGTH];  /*!< */
-    comms_header_t fixed_header;               /*!< */
-    char           source_mac[6];              /*!< */
-    char           destination_mac[6];         /*!< */
-    uint16_t       network_id;                 /*!< */
-    uint8_t        message_slot_number;        /*!< */
-    join_opts_t    join_options;               /*!< */
-    char           payload[PAYLOAD_LENGTH];    /*!< */
+    char           preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
+    comms_header_t fixed_header;                    /*!< Network header             */
+    char           source_mac[6];                   /*!< Source mac address         */
+    char           destination_mac[6];              /*!< Destination mac address    */
+    uint16_t       network_id;                      /*!< Network ID                 */
+    uint8_t        message_slot_number;             /*!< Device/Message slot number */
+    join_opts_t    join_options;                    /*!< joinreq message options    */
+    char           payload[COMMS_JOINREQ_PAYLOAD];  /*!< joinreq message payload    */
 
-}joinreq_t;
+};
 
 
 
-typedef struct joinresp
+/* JOINRESP message structure */
+struct _joinresp
 {
-    char           preamble[PREAMBLE_LENGTH];  /*!< */
-    comms_header_t fixed_header;               /*!< */
-    char           source_mac[6];              /*!< */
-    char           destination_mac[6];         /*!< */
-    uint16_t       network_id;                 /*!< */
-    uint8_t        message_slot_number;        /*!< */
-    char           payload[PAYLOAD_LENGTH];    /*!< */
+    char           preamble[COMMS_PREAMBLE_LENTH];   /*!< Message preamble           */
+    comms_header_t fixed_header;                     /*!< Network header             */
+    char           source_mac[6];                    /*!< Source mac address         */
+    char           destination_mac[6];               /*!< Destination mac address    */
+    uint16_t       network_id;                       /*!< Network ID                 */
+    uint8_t        message_slot_number;              /*!< Device/Message slot number */
+    char           payload[COMMS_JOINRESP_PAYLOAD];  /*!< joinresp message payload   */
 
-}joinresp_t;
+};
 
 
 
-typedef struct status
+/* STATUS message structure */
+struct _status
 {
-    char           preamble[PREAMBLE_LENGTH];  /*!< */
-    comms_header_t fixed_header;               /*!< */
-    uint16_t       network_id;                 /*!< */
-    uint8_t        message_slot_number;        /*!< */
-    uint8_t        destination_client_id;      /*!< */
-    char           payload[PAYLOAD_LENGTH];    /*!< */
+    char           preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
+    comms_header_t fixed_header;                    /*!< Network header             */
+    uint16_t       network_id;                      /*!< Network ID                 */
+    uint8_t        message_slot_number;             /*!< Device/Message slot number */
+    uint8_t        destination_client_id;           /*!< Destination Client ID      */
+    char           payload[COMMS_PAYLOAD_LENGTH];   /*!< status message payload     */
 
-}status_t;
-
-
+};
 
 
-typedef struct statusack
+
+/* CONTRL message structure */
+struct _contrl
+{
+    char           preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
+    comms_header_t fixed_header;                    /*!< Network header             */
+    uint16_t       network_id;                      /*!< Network ID                 */
+    uint8_t        message_slot_number;             /*!< Device/Message slot number */
+    uint8_t        source_client_id;                /*!< Source Client ID           */
+    uint8_t        destination_client_id;           /*!< Destination Client ID      */
+    char           payload[COMMS_PAYLOAD_LENGTH];   /*!< contrl message payload     */
+
+};
+
+
+
+
+
+typedef struct _joinreq joinreq_t;    /*!< JOINREQ message structure  */
+
+typedef struct _joinresp joinresp_t;  /*!< JOINRESP message structure */
+
+typedef struct _status status_t;      /*!< STATUS message structure   */
+
+typedef struct _contrl contrl_t;      /*!< CONTRL message structure   */
+
+
+/* Not tested */
+typedef struct _statusack
 {
     char           preamble[PREAMBLE_LENGTH]; /*!< */
     comms_header_t fixed_header;              /*!< */
@@ -178,34 +205,16 @@ typedef struct statusack
 
 
 
-
-typedef struct contrl
-{
-    char           preamble[PREAMBLE_LENGTH]; /*!< */
-    comms_header_t fixed_header;              /*!< */
-    uint16_t       network_id;                /*!< */
-    uint8_t        message_slot_number;       /*!< */
-    uint8_t        source_client_id;          /*!< */
-    uint8_t        destination_client_id;     /*!< */
-    char           payload[PAYLOAD_LENGTH];   /*!< */
-
-}contrl_t;
-
-
-
-
-
+/* Protocol Message handle */
 typedef struct wi_net_protocol_handle
 {
-    joinreq_t         *joinrequest_msg;   /*!< */
-    joinresp_t        *joinresponse_msg;  /*!< */
-    status_t          *status_msg;        /*!< */
-    statusack_t       *statusack_msg;     /*!< */
-    contrl_t          *contrl_msg;        /*!< */
+    joinreq_t   *joinrequest_msg;   /*!< joinreq message structure   */
+    joinresp_t  *joinresponse_msg;  /*!< joinresp message structure  */
+    status_t    *status_msg;        /*!< status message structure    */
+    statusack_t *statusack_msg;     /*!< statusack message structure */
+    contrl_t    *contrl_msg;        /*!< contrl message structure    */
 
 }protocol_handle_t;
-
-
 
 
 
@@ -290,13 +299,11 @@ int8_t comms_get_contrl_data(char *message_buffer, uint8_t *source_client_id, pr
 
 
 
-
 /******************************************************************************/
 /*                                                                            */
 /*                    API Function Prototypes (Server)                        */
 /*                                                                            */
 /******************************************************************************/
-
 
 
 
