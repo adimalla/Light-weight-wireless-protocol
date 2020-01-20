@@ -65,6 +65,30 @@
 /******************************************************************************/
 
 
+/* JOINREQ options */
+typedef struct _join_options
+{
+    uint8_t reserved           : 4; /*!< (LSB) Reserved                                                */
+    uint8_t request_slots      : 1; /*!< (MSB) Request slots from server                               */
+    uint8_t request_keep_alive : 1; /*!< (MSB) Request keep alive at server                            */
+    uint8_t quality_of_service : 2; /*!< (MSB) Quality of service, Fire and Forget: 0, Atleast Once: 1 */
+
+}join_opts_t;
+
+
+/* JOINREQ message structure */
+struct _joinreq
+{
+    char           preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
+    comms_header_t fixed_header;                    /*!< Network header             */
+    char           source_mac[6];                   /*!< Source mac address         */
+    char           destination_mac[6];              /*!< Destination mac address    */
+    uint16_t       network_id;                      /*!< Network ID                 */
+    uint8_t        message_slot_number;             /*!< Device/Message slot number */
+    join_opts_t    join_options;                    /*!< joinreq message options    */
+    char           payload[COMMS_JOINREQ_PAYLOAD];  /*!< joinreq message payload    */
+
+};
 
 
 
@@ -678,14 +702,17 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
 
 
 
-/****************************************************************************
+/*****************************************************************************
  * @brief  Function to check/get JOINREQ message data
- * @param  server              : reference to the protocol handle structure
- * @param  server_device       : reference to the device structure
- * #param  join_response_state : state of join response flag
- * @retval int8_t              : error: -10, success: 4
- ****************************************************************************/
-int8_t comms_get_joinreq_data(protocol_handle_t server, device_config_t server_device, int8_t joinresponse_state)
+ * @param *client_mac_address     : client mac address
+ * @param *client_requested_slots : requested slots by the client
+ * @param  server                 : reference to the protocol handle structure
+ * @param  server_device          : reference to the device structure
+ * #param  join_response_state    : state of join response flag
+ * @retval int8_t                 : error: -10, success: 4
+ *****************************************************************************/
+int8_t comms_get_joinreq_data(char *client_mac_address, uint8_t *client_requested_slots, protocol_handle_t server,
+                              device_config_t server_device, int8_t joinresponse_state)
 {
     int8_t  func_retval = 0;
 
@@ -698,6 +725,13 @@ int8_t comms_get_joinreq_data(protocol_handle_t server, device_config_t server_d
         /* Check network id */
         if( (server.joinrequest_msg->network_id == server_device.device_network_id) && (joinresponse_state == 1) )
         {
+
+            /* Get client requested slots */
+            *client_requested_slots = strtol(server.joinrequest_msg->payload, NULL, 10);
+
+            /* Get client mac address */
+            strncpy(client_mac_address, server.joinrequest_msg->source_mac, COMMS_MACADDR_SIZE);
+
             /* Can be used for as JOINRESP fsm state value */
             func_retval = 4;
         }
@@ -706,8 +740,6 @@ int8_t comms_get_joinreq_data(protocol_handle_t server, device_config_t server_d
 
     return func_retval;
 }
-
-
 
 
 
