@@ -61,22 +61,17 @@
 /******************************************************************************/
 
 
-
 /* -2 : JOINRESP_NACK, -3: JOINRESP_DUP */
-table_retval_t update_client_table(client_devices_t *device_table, protocol_handle_t *protocol_server, device_config_t *server)
+table_retval_t update_server_device_table(client_devices_t *device_table, char *client_mac_address, uint8_t requested_slots, device_config_t *server)
 {
     table_retval_t return_value;
 
     uint8_t index = 0;
     uint8_t found = 0;
 
-    uint16_t requested_slots = 0;
-
-    /* Get number of slots from the payload */
-    requested_slots = atoi(protocol_server->joinrequest_msg->payload);
 
     /* Error check */
-    if(device_table == NULL || protocol_server == NULL || server == NULL )
+    if(device_table == NULL || client_mac_address == NULL || server == NULL )
     {
         return_value.table_retval = -1;
     }
@@ -89,7 +84,7 @@ table_retval_t update_client_table(client_devices_t *device_table, protocol_hand
         /* get data from join request */
         for(index = 0; index < 5; index++)
         {
-            if(memcmp(device_table[index].client_mac, protocol_server->joinrequest_msg->source_mac,6) == 0)
+            if(memcmp(device_table[index].client_mac, client_mac_address, 6) == 0)
             {
                 found = 1;
 
@@ -108,7 +103,7 @@ table_retval_t update_client_table(client_devices_t *device_table, protocol_hand
                 device_table[index].client_id = server->total_slots + 1;
 
                 /* Add MAC address to table */
-                memcpy(device_table[index].client_mac, protocol_server->joinrequest_msg->source_mac, 6);
+                memcpy(device_table[index].client_mac, client_mac_address, 6);
 
                 /* Update slot */
                 if(requested_slots > 1)
@@ -143,6 +138,7 @@ table_retval_t update_client_table(client_devices_t *device_table, protocol_hand
 
 
 
+
 int8_t read_client_table(char *client_mac_address, int8_t *client_id, client_devices_t *device_table, int16_t table_index)
 {
     int8_t func_retval;
@@ -165,6 +161,12 @@ int8_t read_client_table(char *client_mac_address, int8_t *client_id, client_dev
     return func_retval;
 
 }
+
+
+
+
+
+
 
 
 

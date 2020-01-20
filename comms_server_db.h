@@ -83,10 +83,14 @@ typedef struct client_devices
 
 
 
-table_retval_t update_client_table(client_devices_t *device_table, protocol_handle_t *protocol_server, device_config_t *server);
+
 
 
 int8_t read_client_table(char *client_mac_address, int8_t *client_id, client_devices_t *device_table, int16_t table_index);
+
+
+
+table_retval_t update_server_device_table(client_devices_t *device_table, char *client_mac_address, uint8_t requested_slots, device_config_t *server);
 
 
 
