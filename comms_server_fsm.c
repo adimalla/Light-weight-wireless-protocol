@@ -290,41 +290,37 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
 
         /* Read Status message and send control message to the destination device */
-
         server.status_msg = (void*)network_buffers->read_message;
 
-        /* Check network id */
-        if(server.status_msg->network_id == server_device->device_network_id)
+        /* get destination client and payload from status */
+        comms_get_status_message(server, *server_device, status_message_buffer, &source_client_id, &destination_client_id);
+
+        if(server_mode == WI_LOCAL_SERVER)
         {
-            /* get destination client and payload from status */
-            comms_get_status_message(status_message_buffer, &source_client_id, &destination_client_id, server);
-
-            if(server_mode == WI_LOCAL_SERVER)
+            /* handle server message condition (not done) */
+            if(destination_client_id == 1)
             {
-                /* handle server message condition (not done) */
-                if(destination_client_id == 1)
-                {
-                    /* calibrate timer to broadcast message */
+                /* calibrate timer to broadcast message */
 
-                    fsm_state = CONTROLMSG_STATE;
+                fsm_state = CONTROLMSG_STATE;
 
-                }
-                else
-                {
-                    /* search table for */
-                    device_found = find_client_device(client_devices, &destination_client_id, client_mac_address, 1);
-
-                    /* Check device found condition */
-                    if(device_found == 0)
-                        destination_client_id = device_found;
-
-                    /* Set timer to broadcast slot */
-                    comms_network_set_timer(wireless_network, server_device, NET_BROADCAST_SLOT);
-
-                    fsm_state = CONTROLMSG_STATE;
-
-                }
             }
+            else
+            {
+                /* search table for */
+                device_found = find_client_device(client_devices, &destination_client_id, client_mac_address, 1);
+
+                /* Check device found condition */
+                if(device_found == 0)
+                    destination_client_id = device_found;
+
+                /* Set timer to broadcast slot */
+                comms_network_set_timer(wireless_network, server_device, NET_BROADCAST_SLOT);
+
+                fsm_state = CONTROLMSG_STATE;
+
+            }
+
 
         }
         else

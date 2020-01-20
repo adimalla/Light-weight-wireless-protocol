@@ -97,6 +97,7 @@ typedef enum comms_message_status_codes
 
 /* Wireless Network Protocol Messages*/
 
+
 /* Network Header */
 typedef struct comms_header
 {
@@ -108,56 +109,6 @@ typedef struct comms_header
 }comms_header_t;
 
 
-
-
-
-
-/* JOINRESP message structure */
-struct _joinresp
-{
-    char           preamble[COMMS_PREAMBLE_LENTH];   /*!< Message preamble           */
-    comms_header_t fixed_header;                     /*!< Network header             */
-    char           source_mac[6];                    /*!< Source mac address         */
-    char           destination_mac[6];               /*!< Destination mac address    */
-    uint16_t       network_id;                       /*!< Network ID                 */
-    uint8_t        message_slot_number;              /*!< Device/Message slot number */
-    char           payload[COMMS_JOINRESP_PAYLOAD];  /*!< joinresp message payload   */
-
-};
-
-
-
-/* STATUS message structure */
-struct _status
-{
-    char           preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
-    comms_header_t fixed_header;                    /*!< Network header             */
-    uint16_t       network_id;                      /*!< Network ID                 */
-    uint8_t        message_slot_number;             /*!< Device/Message slot number */
-    uint8_t        destination_client_id;           /*!< Destination Client ID      */
-    char           payload[COMMS_PAYLOAD_LENGTH];   /*!< status message payload     */
-
-};
-
-
-
-/* CONTRL message structure */
-struct _contrl
-{
-    char           preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
-    comms_header_t fixed_header;                    /*!< Network header             */
-    uint16_t       network_id;                      /*!< Network ID                 */
-    uint8_t        message_slot_number;             /*!< Device/Message slot number */
-    uint8_t        source_client_id;                /*!< Source Client ID           */
-    uint8_t        destination_client_id;           /*!< Destination Client ID      */
-    char           payload[COMMS_PAYLOAD_LENGTH];   /*!< contrl message payload     */
-
-};
-
-
-
-
-
 typedef struct _joinreq joinreq_t;    /*!< JOINREQ message structure  */
 
 typedef struct _joinresp joinresp_t;  /*!< JOINRESP message structure */
@@ -165,6 +116,7 @@ typedef struct _joinresp joinresp_t;  /*!< JOINRESP message structure */
 typedef struct _status status_t;      /*!< STATUS message structure   */
 
 typedef struct _contrl contrl_t;      /*!< CONTRL message structure   */
+
 
 
 /* Not tested */
@@ -307,15 +259,17 @@ uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device
 
 
 
-/****************************************************************************************
+/******************************************************************************************
  * @brief  Function to get STATUS Message from client
+ * @param  server                 : reference to the server protocol handle structure
+ * @param  server_device          : reference to the server device configuration structure
  * @param  message_buffer         : message data from status message
  * @param  *source_client_id      : pointer to client/device id of source device
  * @param  *destination_client_id : pointer to client/device id of destination device
- * @param  device                 : reference to the client protocol handle structure
  * @retval int8_t                 : error: -9, success: length of status message payload
- ****************************************************************************************/
-int8_t comms_get_status_message(char *client_payload, uint8_t *source_client_id, uint8_t *destination_client_id, protocol_handle_t client);
+ ******************************************************************************************/
+int8_t comms_get_status_message(protocol_handle_t server, device_config_t server_device, char *client_payload,
+                                uint8_t *source_client_id, uint8_t *destination_client_id);
 
 
 
@@ -323,7 +277,7 @@ int8_t comms_get_status_message(char *client_payload, uint8_t *source_client_id,
 /****************************************************************************************
  * @brief  Function to configure CONTRL message
  * @param  *server                : reference to the server protocol handle
- * @param  device                 : reference to the client protocol handle structure
+ * @param  device                 : reference to the server device structure
  * @param  *source_client_id      : reference to client/device id of source device
  * @param  *destination_client_id : reference to client/device id of destination device
  * @param  payload                : CONTRL message payload

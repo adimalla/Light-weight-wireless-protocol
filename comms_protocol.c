@@ -91,6 +91,51 @@ struct _joinreq
 };
 
 
+/* JOINRESP message structure */
+struct _joinresp
+{
+    char           preamble[COMMS_PREAMBLE_LENTH];   /*!< Message preamble           */
+    comms_header_t fixed_header;                     /*!< Network header             */
+    char           source_mac[6];                    /*!< Source mac address         */
+    char           destination_mac[6];               /*!< Destination mac address    */
+    uint16_t       network_id;                       /*!< Network ID                 */
+    uint8_t        message_slot_number;              /*!< Device/Message slot number */
+    char           payload[COMMS_JOINRESP_PAYLOAD];  /*!< joinresp message payload   */
+
+};
+
+
+
+/* STATUS message structure */
+struct _status
+{
+    char           preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
+    comms_header_t fixed_header;                    /*!< Network header             */
+    uint16_t       network_id;                      /*!< Network ID                 */
+    uint8_t        message_slot_number;             /*!< Device/Message slot number */
+    uint8_t        destination_client_id;           /*!< Destination Client ID      */
+    char           payload[COMMS_PAYLOAD_LENGTH];   /*!< status message payload     */
+
+};
+
+
+
+/* CONTRL message structure */
+struct _contrl
+{
+    char           preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
+    comms_header_t fixed_header;                    /*!< Network header             */
+    uint16_t       network_id;                      /*!< Network ID                 */
+    uint8_t        message_slot_number;             /*!< Device/Message slot number */
+    uint8_t        source_client_id;                /*!< Source Client ID           */
+    uint8_t        destination_client_id;           /*!< Destination Client ID      */
+    char           payload[COMMS_PAYLOAD_LENGTH];   /*!< contrl message payload     */
+
+};
+
+
+
+
 
 
 
@@ -590,40 +635,46 @@ uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device
 
 
 
-/****************************************************************************************
+/******************************************************************************************
  * @brief  Function to get STATUS Message from client
+ * @param  server                 : reference to the server protocol handle structure
+ * @param  server_device          : reference to the server device configuration structure
  * @param  message_buffer         : message data from status message
- * @param  *source_client_id      : reference to client/device id of source device
- * @param  *destination_client_id : reference to client/device id of destination device
- * @param  device                 : reference to the client protocol handle structure
+ * @param  *source_client_id      : pointer to client/device id of source device
+ * @param  *destination_client_id : pointer to client/device id of destination device
  * @retval int8_t                 : error: -9, success: length of status message payload
- ****************************************************************************************/
-int8_t comms_get_status_message(char *client_payload, uint8_t *source_client_id, uint8_t *destination_client_id, protocol_handle_t device)
+ ******************************************************************************************/
+int8_t comms_get_status_message(protocol_handle_t server, device_config_t server_device, char *client_payload,
+                                uint8_t *source_client_id, uint8_t *destination_client_id)
 {
     int8_t func_retval            = 0;
     uint8_t status_payload_length = 0;
 
 
     /* 1-3 slots are reserved can't be taken by any device */
-    if(device.status_msg->message_slot_number <= 3)
+    if(server.status_msg->message_slot_number <= 3)
     {
         *destination_client_id = 0;
         func_retval = STATUSMSG_RECV_ERROR;
     }
     else
     {
-        status_payload_length = strlen(device.status_msg->payload);
+        /* Check network ID */
+        if(server.status_msg->network_id == server_device.device_network_id)
+        {
+            status_payload_length = strlen(server.status_msg->payload);
 
-        /* get source client id*/
-        *source_client_id = device.status_msg->message_slot_number;
+            /* get source client id*/
+            *source_client_id = server.status_msg->message_slot_number;
 
-        /* get destination client id */
-        *destination_client_id = device.status_msg->destination_client_id;
+            /* get destination client id */
+            *destination_client_id = server.status_msg->destination_client_id;
 
-        /* get payload data from client, get rid of the terminator */
-        strncpy(client_payload, device.status_msg->payload, status_payload_length - COMMS_TERMINATOR_LENGTH);
+            /* get payload data from client, get rid of the terminator */
+            strncpy(client_payload, server.status_msg->payload, status_payload_length - COMMS_TERMINATOR_LENGTH);
 
-        func_retval = status_payload_length;
+            func_retval = status_payload_length;
+        }
     }
 
 
@@ -636,7 +687,7 @@ int8_t comms_get_status_message(char *client_payload, uint8_t *source_client_id,
 /****************************************************************************************
  * @brief  Function to configure CONTRL message
  * @param  *server                : reference to the server protocol handle
- * @param  device                 : reference to the client protocol handle structure
+ * @param  device                 : reference to the server device structure
  * @param  *source_client_id      : reference to client/device id of source device
  * @param  *destination_client_id : reference to client/device id of destination device
  * @param  payload                : CONTRL message payload
