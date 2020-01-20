@@ -61,13 +61,36 @@
 /******************************************************************************/
 
 
-/* -2 : JOINRESP_NACK, -3: JOINRESP_DUP */
+
+
+
+client_devices_t* create_server_device_table(uint8_t table_size)
+{
+    static client_devices_t server_device_table[CLIENT_TABLE_SIZE];
+
+    return server_device_table;
+}
+
+
+/*****************************************************************************
+ * @brief  Function write to client device table
+ * @param  *device_table       : reference to the device table
+ * @param  *client_mac_address : client mac address
+ * @param  requested_slots     : requested slots by the client
+ * @param  server              : reference to the protocol handle structure
+ * @retval int8_t              : error: -2 : JOINRESP_NACK, -3: JOINRESP_DUP,
+ *                               success: table current index
+ *****************************************************************************/
 table_retval_t update_server_device_table(client_devices_t *device_table, char *client_mac_address, uint8_t requested_slots, device_config_t *server)
 {
     table_retval_t return_value;
 
     uint8_t index = 0;
     uint8_t found = 0;
+
+
+    /* Lock client table */
+    device_table->client_table_lock = 1;
 
 
     /* Error check */
@@ -82,9 +105,9 @@ table_retval_t update_server_device_table(client_devices_t *device_table, char *
     else
     {
         /* get data from join request */
-        for(index = 0; index < 5; index++)
+        for(index = 0; index < CLIENT_TABLE_SIZE; index++)
         {
-            if(memcmp(device_table[index].client_mac, client_mac_address, 6) == 0)
+            if(strncmp(device_table[index].client_mac, client_mac_address, 6) == 0)
             {
                 found = 1;
 
@@ -92,6 +115,7 @@ table_retval_t update_server_device_table(client_devices_t *device_table, char *
                 return_value.table_retval = -3;
 
                 return_value.table_index = index;
+
 
                 break;
             }
@@ -133,15 +157,32 @@ table_retval_t update_server_device_table(client_devices_t *device_table, char *
         }
     }
 
+
+    /* unlock client table */
+    device_table->client_table_lock = 0;
+
+
     return return_value;
 }
 
 
 
 
-int8_t read_client_table(char *client_mac_address, int8_t *client_id, client_devices_t *device_table, int16_t table_index)
+/*****************************************************************
+ * @brief  Function read from index value of the device table
+ * @param  *device_table       : reference to the device table
+ * @param  *client_mac_address : client mac address
+ * @param  *client_id          : reference to client ID variable
+ * @param  table index         : table index value
+ * @retval int8_t              : error = -4, success = 0
+ ****************************************************************/
+int8_t read_client_table(client_devices_t *device_table, char *client_mac_address, int8_t *client_id,  int16_t table_index)
 {
     int8_t func_retval;
+
+
+    /* Lock client table */
+    device_table->client_table_lock = 1;
 
     if(table_index < 0)
     {
@@ -156,7 +197,12 @@ int8_t read_client_table(char *client_mac_address, int8_t *client_id, client_dev
         *client_id = device_table[table_index].client_id;
 
         func_retval = 0;
+
     }
+
+
+    /* unlock client table */
+    device_table->client_table_lock = 0;
 
     return func_retval;
 
@@ -164,8 +210,72 @@ int8_t read_client_table(char *client_mac_address, int8_t *client_id, client_dev
 
 
 
+/*******************************************************************
+ * @brief  Function to find device in client device table
+ * @param  *device_table       : reference to the device table
+ * @param  *client_id          : reference to client ID variable
+ * @param  *client_mac_address : client mac address
+ * @param  search_mode         : search by client id or mac address
+ * @retval int8_t              : error = 0, success = 1
+ *******************************************************************/
+int8_t find_client_device(client_devices_t *device_table, uint8_t *client_id, char *client_mac_address, uint8_t search_mode)
+{
+    int8_t func_retval = 0;
+
+    uint8_t index = 0;
 
 
+    /* Lock client table */
+    device_table->client_table_lock = 1;
+
+    for(index=0; index < CLIENT_TABLE_SIZE; index++)
+    {
+
+        /* Search by client id */
+        if(search_mode == 1)
+        {
+            if(device_table[index].client_id == *client_id)
+            {
+                func_retval = 1;
+
+                strncpy(client_mac_address, device_table[index].client_mac, 6);
+
+                break;
+            }
+            else
+            {
+                func_retval = 0;
+            }
+
+        }
+        /* Search my mac-address */
+        else if(search_mode == 2)
+        {
+            if(strncmp(device_table[index].client_mac, client_mac_address, 6) == 0)
+            {
+                func_retval = 1;
+
+                *client_id = device_table[index].client_id;
+
+                break;
+            }
+            else
+            {
+                func_retval = 0;
+            }
+
+        }
+
+
+    }
+
+    /* unlock client table */
+    device_table->client_table_lock = 0;
+
+
+    return func_retval;
+
+}
 
 
 
