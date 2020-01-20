@@ -273,7 +273,7 @@ void wTimer5Isr(void)
 
     server_device = create_server_device("11:22:33:44:55:66", 1441, 5, 3);
 
-    static client_devices_t client_devices[5];
+    static client_devices_t client_devices[CLIENT_TABLE_SIZE];
 
     /* Start Server state machine */
     comms_start_server(wireless_network, server_device, &buffer, client_devices, WI_LOCAL_SERVER);

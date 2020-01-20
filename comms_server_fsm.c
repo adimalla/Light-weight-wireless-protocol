@@ -136,6 +136,8 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
     static uint8_t source_client_id          = 0;
     static char    status_message_buffer[20] = {0};
 
+    static int8_t device_found = 0;
+
     static uint8_t contrl_flag = 0;
 
     /* Device DB related declarations */
@@ -269,7 +271,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         server.joinresponse_msg = (void*)send_message_buffer;
 
         /* Get client data from the device table */
-        read_client_table(destination_mac_addr, &client_id, client_devices, table_values.table_index);
+        read_client_table(client_devices, destination_mac_addr, &client_id, table_values.table_index);
 
         /* Set join response message type */
         comms_set_joinresp_message_status(&server, table_values.table_retval);
@@ -312,7 +314,6 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
                 if(destination_client_id == 1)
                 {
                     /* calibrate timer to broadcast message */
-                    //set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BROADCAST_SLOTNUM);
 
                     fsm_state = CONTROLMSG_STATE;
 
@@ -320,7 +321,11 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
                 else
                 {
                     /* search table for */
-                    read_client_table(destination_mac_addr, &client_id, client_devices, destination_client_id - 4);
+                    device_found = find_client_device(client_devices, &destination_client_id, client_mac_address, 1);
+
+                    /* Check device found condition */
+                    if(device_found == 0)
+                        destination_client_id = device_found;
 
                     /* Set timer to broadcast slot */
                     comms_network_set_timer(wireless_network, server_device, NET_BROADCAST_SLOT);
@@ -381,9 +386,12 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         /* set timer to sync slot after sending CONTRL message */
         comms_network_set_timer(wireless_network, server_device, NET_SYNC_SLOT);
 
+        /* set flags and parameters to init values */
+        contrl_flag           = 0;
+        device_found          = 0;
+        source_client_id      = 0;
+        destination_client_id = 0;
         memset(status_message_buffer, 0, sizeof(status_message_buffer));
-
-        contrl_flag = 0;
 
         fsm_state = SYNC_STATE;
 
