@@ -258,12 +258,12 @@ void wTimer5Isr(void)
     network_operations_t net_ops =
     {
 
-     .send_message          = xbee_send,
-     .set_tx_timer          = set_tx_timer,
-     .sync_activity_status  = sync_led_status,
-     .send_activity_status  = send_led_status,
-     .recv_activity_status  = recv_led_status,
-     .clear_status          = clear_led_status
+     .send_message         = xbee_send,
+     .set_tx_timer         = set_tx_timer,
+     .sync_activity_status = sync_led_status,
+     .send_activity_status = send_led_status,
+     .recv_activity_status = recv_led_status,
+     .clear_status         = clear_led_status
 
     };
 
@@ -271,7 +271,7 @@ void wTimer5Isr(void)
 
     device_config_t *server_device;
 
-    server_device = create_server_device("11:22:33:44:55:66", 1441, 4, 3);
+    server_device = create_server_device("11:22:33:44:55:66", 1441, 5, 3);
 
     static client_devices_t client_devices[5];
 

@@ -83,11 +83,11 @@ typedef enum fsm_state_values
 /******************************************************************************/
 
 
-static int8_t get_client_mac_address(char *client_mac_address, protocol_handle_t server)
+static int8_t get_client_mac_address(char *client_mac_address, protocol_handle_t *server)
 {
     int8_t func_retval = 0;
 
-    strncpy(client_mac_address, server.joinrequest_msg->source_mac, 6);
+    //strncpy(client_mac_address, server->joinrequest_msg->source_mac, 6);
 
     return func_retval;
 }
@@ -122,8 +122,12 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
     protocol_handle_t server;
 
-    char    send_message_buffer[32]                  = {0};
-    char    destination_mac_addr[COMMS_MACADDR_SIZE] = {0};
+    char    send_message_buffer[COMMS_MESSAGE_LENGTH] = {0};
+
+    uint8_t client_requested_slots                    = 0;
+    char    client_mac_address[COMMS_MACADDR_SIZE]    = {0};
+
+    char    destination_mac_addr[COMMS_MACADDR_SIZE]  = {0};
 
     uint8_t message_length = 0;
 
@@ -188,7 +192,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         /* Not implemented */
         if(contrl_flag)
         {
-            //set_tx_timer(COMMS_SERVER_SLOT_TIME, COMMS_BROADCAST_SLOTNUM);
+            /* Set timer */
 
             fsm_state = CONTROLMSG_STATE;
 
@@ -204,11 +208,13 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
         server.joinrequest_msg = (void*)network_buffers->read_message;
 
-        api_retval = comms_get_joinreq_data(server, *server_device, network_buffers->application_data.network_join_response);
+        api_retval = comms_get_joinreq_data(client_mac_address, &client_requested_slots, server,
+                                            *server_device, network_buffers->application_data.network_join_response);
 
         if(api_retval)
         {
-            table_values = update_client_table(client_devices, &server, server_device);
+
+            table_values = update_server_device_table(client_devices, client_mac_address, client_requested_slots, server_device);
 
             network_buffers->application_data.network_join_response = 0;
 
