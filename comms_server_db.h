@@ -86,6 +86,16 @@ typedef struct client_devices
 
 
 
+
+
+/****************************************************************
+ * @brief  Client device table contructor function
+ * @retval int8_t : error = -2 JOINRESP_NACK, -3: JOINRESP_DUP,
+ ***************************************************************/
+client_devices_t* create_server_device_table(void);
+
+
+
 /*****************************************************************************
  * @brief  Function write to client device table
  * @param  *device_table       : reference to the device table
@@ -120,6 +130,7 @@ int8_t read_client_table(client_devices_t *device_table, char *client_mac_addres
  * @retval int8_t              : error = 0, success = 1
  *******************************************************************/
 int8_t find_client_device(client_devices_t *device_table, uint8_t *client_id, char *client_mac_address, uint8_t search_mode);
+
 
 
 #endif /* COMMS_SERVER_DB_H_ */

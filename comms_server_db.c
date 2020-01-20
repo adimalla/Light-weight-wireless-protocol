@@ -62,9 +62,11 @@
 
 
 
-
-
-client_devices_t* create_server_device_table(uint8_t table_size)
+/****************************************************************
+ * @brief  Client device table contructor function
+ * @retval int8_t : error = -2 JOINRESP_NACK, -3: JOINRESP_DUP,
+ ***************************************************************/
+client_devices_t* create_server_device_table(void)
 {
     static client_devices_t server_device_table[CLIENT_TABLE_SIZE];
 
