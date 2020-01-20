@@ -666,6 +666,8 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
     {
         server->contrl_msg->fixed_header.message_status = CLIENT_ECHO;
 
+        server->contrl_msg->source_client_id = device.device_slot_number;
+
         /* add payload */
         strncpy(server->contrl_msg->payload, payload, payload_length);
     }
