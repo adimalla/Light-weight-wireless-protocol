@@ -83,15 +83,6 @@ typedef enum fsm_state_values
 /******************************************************************************/
 
 
-static int8_t get_client_mac_address(char *client_mac_address, protocol_handle_t *server)
-{
-    int8_t func_retval = 0;
-
-    //strncpy(client_mac_address, server->joinrequest_msg->source_mac, 6);
-
-    return func_retval;
-}
-
 
 
 
