@@ -1,12 +1,10 @@
-/*
+/**
  ******************************************************************************
- * @file    comms_protocol_configs.h
+ * @file    comms_client_fsm.h
  * @author  Aditya Mall,
- * @brief   (6314)comms protocol header file.
+ * @brief   (6314) wireless network client state machine header file
  *
  *  Info
- *          (6314)comms protocol header file, based on custom protocol,
- *          part of EE6314 IOT project (University of Texas, Arlington)
  *
  ******************************************************************************
  * @attention
@@ -41,58 +39,48 @@
  ******************************************************************************
  */
 
-#ifndef NETWORK_PROTOCOL_CONFIGS_H_
-#define NETWORK_PROTOCOL_CONFIGS_H_
+
+#ifndef COMMS_CLIENT_FSM_H_
+#define COMMS_CLIENT_FSM_H_
 
 
-/* Message Premable defines */
-#define PREAMBLE_SYNC       0xAA11
-#define PREAMBLE_JOINREQ    0xBB11
-#define PREMABLE_JOINRESP   0xBB22
-#define PREAMBLE_STATUS     0xCC11
-#define PREAMBLE_CONTRL     0xCC22
-#define PREAMBLE_STATUSACK  0xCC33
+/*
+ * Standard Header and API Header files
+ */
+#include <stdint.h>
 
-/* Message Options defines */
-#define COMMS_SERVER_SLOTNUM       1
-#define COMMS_ACCESS_SLOTNUM       2
-#define COMMS_BRODCAST_SLOTNUM     3
-
-/* Generic message size defines */
-#define COMMS_PREAMBLE_LENTH            2
-#define COMMS_FIXED_HEADER_LENGTH       3
-#define COMMS_CHECKSUM_SIZE             1
-#define COMMS_MACADDR_SIZE              6
-#define COMMS_SOURCE_MACADDR_SIZE       6
-#define COMMS_DESTINATION_MACADDR_SIZE  6
-#define COMMS_NETWORK_ID_SIZE           2
-#define COMMS_SLOTNUM_SIZE              1
-#define COMMS_PAYLOAD_LENGTH            20
-#define COMMS_MESSAGE_TERMINATOR        "\rt"
-#define COMMS_TERMINATOR_LENGTH         2
-
-/* Sync Message size defines  */
-#define COMMS_ACCESS_SLOT_SIZE  1
-#define COMMS_SLOT_TIME_SIZE    2
-
-/* JOINREQ defines */
-#define COMMS_JOIN_OPTONS_SIZE  1
-
-/* STATUS, CONTRL and EVNT defines */
-#define COMMS_DESTINATION_DEVICEID_SIZE 1
-
-/* Server related defines */
-#define COMMS_ACCESS_SLOT_SIZE     1
-#define COMMS_SERVER_SLOT_TIME     5
-#define COMMS_SLOT_TIME_SIZE       2
-#define COMMS_SERVER_MAX_SLOTS     20
-#define MAX_SLOT_TIME              1000
+#include "comms_network.h"
+#include "comms_protocol.h"
 
 
-#define COMMS_SOURCE_DEVICEID_SIZE      1
 
-/* STATUS, CONTRL and EVNT defines */
-#define COMMS_DESTINATION_DEVICEID_SIZE 1
+#define JOINREQ_ONCE 1
 
 
-#endif /* NETWORK_PROTOCOL_CONFIGS_H_ */
+/******************************************************************************/
+/*                                                                            */
+/*                           API Prototypes                                   */
+/*                                                                            */
+/******************************************************************************/
+
+
+/**************************************************************************
+ * @brief  Client State Machine Start Function
+ * @param  *wireless_network : reference to network access handle
+ * @param  *server_device    : reference to device configuration structure
+ * @param  *network_buffers  : reference to network buffers structure
+ * @param  destination_id    : device id of the destination
+ * @retval int8_t            : error = 0
+ **************************************************************************/
+int8_t comms_start_client(access_control_t *wireless_network, device_config_t *client_device, comms_network_buffer_t *network_buffers, uint8_t destination_id);
+
+
+
+
+#endif /* COMMS_CLIENT_FSM_H_ */
+
+
+
+
+
+

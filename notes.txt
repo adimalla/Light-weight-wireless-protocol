@@ -1,0 +1,9 @@
+
+
+version: wi_server_v1.1 (01/14/2020)
+
+> !! Sots reduced to 3 as total slots, client table now allocates slots as device = total_slots + 1;
+
+version: wi_server_v2.1 (01/20/2020)
+
+> !! client should have starting transmit timer (when in unjoined state) adjusted to function of server slot time interval.

@@ -54,7 +54,7 @@
 #include <string.h>
 #include <stdint.h>
 
-#include "wi_network.h"
+#include "comms_network.h"
 
 
 /******************************************************************************/
@@ -69,17 +69,6 @@
 
 #define PREAMBLE_LENGTH 2
 #define PAYLOAD_LENGTH  20
-#define COMMS_MESSAGE_BUFFER_SIZE 32
-
-#define COMMS_SYNC_MESSAGE       1
-#define COMMS_JOINREQ_MESSAGE    2
-#define COMMS_JOINRESP_MESSAGE   3
-#define COMMS_STATUS_MESSAGE     4
-#define COMMS_STATUSACK_MESSAGE  5
-#define COMMS_CONTRL_MESSAGE     6
-#define COMMS_EVNT_MESSAGE       7
-#define COMMS_HIBERNATE_MESSAGE  8
-#define COMMS_UNJOIN_MESSAGE     9
 
 
 
@@ -96,7 +85,7 @@ typedef enum comms_message_status_codes
     JOINRESP_ACK      = 0,  /*!< */
     JOINRESP_NACK     = 1,  /*!< */
     JOINREQ_DUP       = 2,  /*!< */
-    JOINRESP_DUP      = 2,
+    JOINRESP_DUP      = 2,  /*!< */
     CLIENT_ECHO       = 3,  /*!< */
     CLIENT_NOT_FOUND  = 4,  /*!< */
     MESSSAGE_OK       = 5,  /*!< */
@@ -106,78 +95,32 @@ typedef enum comms_message_status_codes
 
 
 
-
 /* Wireless Network Protocol Messages*/
 
 
-
+/* Network Header */
 typedef struct comms_header
 {
-    uint8_t message_status    : 4;  /*!< (LSB)*/
-    uint8_t message_type      : 4;  /*!< (MSB)*/
-    uint8_t message_length;         /*!< */
-    uint8_t message_checksum;       /*!< */
+    uint8_t message_status    : 4;  /*!< (LSB) message status */
+    uint8_t message_type      : 4;  /*!< (MSB) message type   */
+    uint8_t message_length;         /*!< Message length       */
+    uint8_t message_checksum;       /*!< Message checksum     */
 
 }comms_header_t;
 
 
+typedef struct _joinreq joinreq_t;    /*!< JOINREQ message structure  */
 
+typedef struct _joinresp joinresp_t;  /*!< JOINRESP message structure */
 
-typedef struct join_opts
-{
-    uint8_t reserved           : 4; /*!< (LSB) */
-    uint8_t request_slot_time  : 1; /*!< (MSB) */
-    uint8_t request_keep_alive : 1; /*!< (MSB) */
-    uint8_t quality_of_service : 2; /*!< (MSB) */
+typedef struct _status status_t;      /*!< STATUS message structure   */
 
-}join_opts_t;
+typedef struct _contrl contrl_t;      /*!< CONTRL message structure   */
 
 
 
-typedef struct joinreq
-{
-    char           preamble[PREAMBLE_LENGTH];  /*!< */
-    comms_header_t fixed_header;               /*!< */
-    char           source_mac[6];              /*!< */
-    char           destination_mac[6];         /*!< */
-    uint16_t       network_id;                 /*!< */
-    uint8_t        message_slot_number;        /*!< */
-    join_opts_t    join_options;               /*!< */
-    char           payload[PAYLOAD_LENGTH];    /*!< */
-
-}joinreq_t;
-
-
-
-typedef struct joinresp
-{
-    char           preamble[PREAMBLE_LENGTH];  /*!< */
-    comms_header_t fixed_header;               /*!< */
-    char           source_mac[6];              /*!< */
-    char           destination_mac[6];         /*!< */
-    uint16_t       network_id;                 /*!< */
-    uint8_t        message_slot_number;        /*!< */
-    char           payload[PAYLOAD_LENGTH];    /*!< */
-
-}joinresp_t;
-
-
-
-typedef struct status
-{
-    char           preamble[PREAMBLE_LENGTH];  /*!< */
-    comms_header_t fixed_header;               /*!< */
-    uint16_t       network_id;                 /*!< */
-    uint8_t        message_slot_number;        /*!< */
-    uint8_t        destination_client_id;      /*!< */
-    char           payload[PAYLOAD_LENGTH];    /*!< */
-
-}status_t;
-
-
-
-
-typedef struct statusack
+/* Not tested */
+typedef struct _statusack
 {
     char           preamble[PREAMBLE_LENGTH]; /*!< */
     comms_header_t fixed_header;              /*!< */
@@ -190,89 +133,23 @@ typedef struct statusack
 
 
 
-
-typedef struct contrl
-{
-    char           preamble[PREAMBLE_LENGTH]; /*!< */
-    comms_header_t fixed_header;              /*!< */
-    uint16_t       network_id;                /*!< */
-    uint8_t        message_slot_number;       /*!< */
-    uint8_t        source_client_id;          /*!< */
-    uint8_t        destination_client_id;     /*!< */
-    char           payload[PAYLOAD_LENGTH];   /*!< */
-
-}contrl_t;
-
-
-
-
-typedef struct network_message
-{
-    char preamble[PREAMBLE_LENGTH];  /*!< */
-    comms_header_t fixed_header;     /*!< */
-
-}network_message_t;
-
-
-
+/* Protocol Message handle */
 typedef struct wi_net_protocol_handle
 {
-    network_message_t *packet_type;       /*!< */
-    joinreq_t         *joinrequest_msg;   /*!< */
-    joinresp_t        *joinresponse_msg;  /*!< */
-    status_t          *status_msg;        /*!< */
-    statusack_t       *statusack_msg;     /*!< */
-    contrl_t          *contrl_msg;        /*!< */
+    joinreq_t   *joinrequest_msg;   /*!< joinreq message structure   */
+    joinresp_t  *joinresponse_msg;  /*!< joinresp message structure  */
+    status_t    *status_msg;        /*!< status message structure    */
+    statusack_t *statusack_msg;     /*!< statusack message structure */
+    contrl_t    *contrl_msg;        /*!< contrl message structure    */
 
 }protocol_handle_t;
-
-
-
-typedef enum message_flags
-{
-    CLEAR_FLAG        = 0,
-    SYNC_FLAG         = 1,
-    JOINREQ_FLAG      = 2,
-    JOINRESP_FLAG     = 3,
-    STATUSMSG_FLAG    = 4,
-    CONTRLMSG_FLAG    = 6,
-
-}message_flags_t;
-
-
-typedef struct application_flags
-{
-    uint8_t network_join_request      : 1;
-    uint8_t network_join_response     : 1;
-    uint8_t network_joined_state      : 1;
-    uint8_t application_message_ready : 1;
-    uint8_t network_message_ready     : 1;
-
-}application_flags_t;
-
-
-typedef struct comms_network_buffer
-{
-    char receive_message[COMMS_MESSAGE_BUFFER_SIZE];
-    char read_message[COMMS_MESSAGE_BUFFER_SIZE];
-
-    application_flags_t application_data;
-
-    char application_message[COMMS_MESSAGE_BUFFER_SIZE];
-    char network_message[COMMS_MESSAGE_BUFFER_SIZE];
-
-    message_flags_t flag_state;
-
-}comms_network_buffer_t;
-
-
 
 
 
 
 /******************************************************************************/
 /*                                                                            */
-/*                       API Function Prototypes                              */
+/*                    API Function Prototypes (Client)                        */
 /*                                                                            */
 /******************************************************************************/
 
@@ -350,22 +227,85 @@ int8_t comms_get_contrl_data(char *message_buffer, uint8_t *source_client_id, pr
 
 
 
+/******************************************************************************/
+/*                                                                            */
+/*                    API Function Prototypes (Server)                        */
+/*                                                                            */
+/******************************************************************************/
 
-uint8_t comms_set_joinresp_message_status(protocol_handle_t *server, int8_t status_value);
 
+
+/*******************************************************************
+ * @brief  Function to set JOINRESP message status
+ * @param  server       : reference to the protocol handle structure
+ * @param  status_value : Join response status value
+ * @retval int8_t       : error: -8, success: 0
+ *******************************************************************/
+int8_t comms_set_joinresp_message_status(protocol_handle_t *server, int8_t status_value);
+
+
+
+
+/***********************************************************************************
+ * @brief  Function to configure JOINRESP message
+ * @param  *server         : reference to the protocol handle
+ * @param  device_server   : server device structure
+ * @param  destination_mac : destination mac address
+ * @param  client_id       : destination client id, new id given to the client
+ * @retval uint8_t         : error 0, success: length of message
+ ***********************************************************************s***********/
 uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device_server, char *destination_mac, int8_t client_id);
 
-int8_t comms_get_status_message(char *client_payload, uint8_t *source_client_id, uint8_t *destination_client_id, protocol_handle_t client);
 
-/*
- * client_id : client id value from table
- */
+
+
+/******************************************************************************************
+ * @brief  Function to get STATUS Message from client
+ * @param  server                 : reference to the server protocol handle structure
+ * @param  server_device          : reference to the server device configuration structure
+ * @param  message_buffer         : message data from status message
+ * @param  *source_client_id      : pointer to client/device id of source device
+ * @param  *destination_client_id : pointer to client/device id of destination device
+ * @retval int16_t                : error: -9, success: length of status message payload
+ ******************************************************************************************/
+int16_t comms_get_status_message(protocol_handle_t server, device_config_t server_device, char *client_payload,
+                                uint8_t *source_client_id, uint8_t *destination_client_id);
+
+
+
+
+/****************************************************************************************
+ * @brief  Function to configure CONTRL message
+ * @param  *server                : reference to the server protocol handle
+ * @param  device                 : reference to the server device structure
+ * @param  *source_client_id      : reference to client/device id of source device
+ * @param  *destination_client_id : reference to client/device id of destination device
+ * @param  *payload               : CONTRL message payload
+ * @param  payload_length         : CONTRL message payload length
+ * @retval int8_t                 : error: 0, success: length of CONTRL message payload
+ ****************************************************************************************/
+uint8_t comms_control_message(protocol_handle_t *server, device_config_t device, uint8_t source_id,
+                              uint8_t destination_id, const char *payload, uint16_t payload_length);
+
+
+
+
+/*****************************************************************************
+ * @brief  Function to check/get JOINREQ message data
+ * @param *client_mac_address     : client mac address
+ * @param *client_requested_slots : requested slots by the client
+ * @param  server                 : reference to the protocol handle structure
+ * @param  server_device          : reference to the device structure
+ * #param  join_response_state    : state of join response flag
+ * @retval int8_t                 : error: -10, success: 4
+ *****************************************************************************/
+int8_t comms_get_joinreq_data(char *client_mac_address, uint8_t *client_requested_slots, protocol_handle_t server,
+                              device_config_t server_device, int8_t joinresponse_state);
+
+
+
+
 int8_t comms_statusack_message(protocol_handle_t *client, device_config_t device, int8_t client_id, uint8_t destination_client_id);
-
-uint8_t comms_control_message(protocol_handle_t *server, device_config_t device, uint8_t source_id, uint8_t destination_id, const char *payload);
-
-
-
 
 
 
