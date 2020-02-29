@@ -71,14 +71,23 @@ typedef struct table_return_values
 }table_retval_t;
 
 
-/* client device table structure */
-typedef struct client_devices
+typedef struct _client_states
 {
-    uint8_t client_id;
-    char    client_mac[6];
-    uint8_t client_number_of_slots;
-    uint8_t client_state;
-    char    client_ip_address[4];
+    uint8_t qos        : 1;
+    uint8_t keep_alive : 1;
+    uint8_t reserved   : 6;
+
+}client_states_t;
+
+
+/* client device table structure */
+typedef struct _client_devices
+{
+    uint8_t         client_id;
+    char            client_mac[6];
+    uint8_t         client_number_of_slots;
+    client_states_t client_states;
+    char            client_ip_address[4];
 
     uint8_t client_table_lock;
 

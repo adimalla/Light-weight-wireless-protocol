@@ -57,13 +57,17 @@
 
 
 
-
 /******************************************************************************/
 /*                                                                            */
 /*                  Data Structures and Defines                               */
 /*                                                                            */
 /******************************************************************************/
 
+
+#define JOINREQ_HEADER_SIZE  16
+#define JOINRESP_HEADER_SIZE 15
+
+#define CONTRL_HEADER_SIZE   5
 
 /* JOINREQ options */
 typedef struct _join_options
@@ -85,8 +89,8 @@ struct _joinreq
     char           destination_mac[6];              /*!< Destination mac address    */
     uint16_t       network_id;                      /*!< Network ID                 */
     uint8_t        message_slot_number;             /*!< Device/Message slot number */ /*Can be used as requested id */
-    join_opts_t    join_options;                    /*!< joinreq message options    */
-    char           payload[COMMS_JOINREQ_PAYLOAD];  /*!< joinreq message payload    */
+    join_opts_t    join_options;                    /*!< JOINREQ message options    */
+    uint8_t        payload;                         /*!< JOINREQ message payload    */
 
 };
 
@@ -94,13 +98,13 @@ struct _joinreq
 /* JOINRESP message structure */
 struct _joinresp
 {
-    char           preamble[COMMS_PREAMBLE_LENTH];   /*!< Message preamble           */
+    char           preamble[COMMS_PREAMBLE_LENTH];   /*!< Message PREAMBLE           */
     comms_header_t fixed_header;                     /*!< Network header             */
-    char           source_mac[6];                    /*!< Source mac address         */
-    char           destination_mac[6];               /*!< Destination mac address    */
+    char           source_mac[6];                    /*!< Source MAC address         */
+    char           destination_mac[6];               /*!< Destination MAC address    */
     uint16_t       network_id;                       /*!< Network ID                 */
     uint8_t        message_slot_number;              /*!< Device/Message slot number */
-    char           payload[COMMS_JOINRESP_PAYLOAD];  /*!< joinresp message payload   */
+    uint8_t        payload;                          /*!< JOINRESP message payload   */
 
 };
 
@@ -114,7 +118,7 @@ struct _status
     uint16_t       network_id;                      /*!< Network ID                 */
     uint8_t        message_slot_number;             /*!< Device/Message slot number */
     uint8_t        destination_client_id;           /*!< Destination Client ID      */
-    char           payload[COMMS_PAYLOAD_LENGTH];   /*!< status message payload     */
+    uint8_t        payload;                         /*!< status message payload     */
 
 };
 
@@ -129,10 +133,9 @@ struct _contrl
     uint8_t        message_slot_number;             /*!< Device/Message slot number */
     uint8_t        source_client_id;                /*!< Source Client ID           */
     uint8_t        destination_client_id;           /*!< Destination Client ID      */
-    char           payload[COMMS_PAYLOAD_LENGTH];   /*!< contrl message payload     */
+    uint8_t        payload;                         /*!< CONTRL message payload     */
 
 };
-
 
 
 
@@ -243,6 +246,8 @@ uint8_t comms_joinreq_message(protocol_handle_t *client, device_config_t device,
     uint8_t message_length = 0;
     char    payload_buff[4] = {0};
 
+    char *copy_payload;
+
     /* Handle error */
     if(client == NULL || device.device_network_id == 0 || requested_slots > COMMS_SERVER_MAX_SLOTS)
     {
@@ -277,22 +282,24 @@ uint8_t comms_joinreq_message(protocol_handle_t *client, device_config_t device,
 
 
         /* Add payload message */
+
+        copy_payload = (void*)&client->joinrequest_msg->payload;
+
         ltoa((long int)requested_slots, payload_buff);
 
         payload_length = strlen(payload_buff);
 
-        strncpy(client->joinrequest_msg->payload, payload_buff, payload_length);
+        memcpy(copy_payload, payload_buff, payload_length);
 
 
         /* Add message terminator */
         payload_index = payload_length;
 
-        strncpy(client->joinrequest_msg->payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
+        strncpy(copy_payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
 
 
         /* Calculate remaining length */
-        client->joinrequest_msg->fixed_header.message_length = COMMS_SOURCE_MACADDR_SIZE + COMMS_DESTINATION_MACADDR_SIZE + COMMS_NETWORK_ID_SIZE + COMMS_SLOTNUM_SIZE +\
-                COMMS_JOIN_OPTONS_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
+        client->joinrequest_msg->fixed_header.message_length = JOINREQ_HEADER_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
 
         /* Total message Length */
         message_length = client->joinrequest_msg->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
@@ -321,6 +328,7 @@ int8_t comms_get_joinresp_data(device_config_t *device, protocol_handle_t client
     int8_t func_retval = 0;
     uint8_t message_status = 0;
 
+    char *joinresp_data;
 
     if(device == NULL)
     {
@@ -328,6 +336,9 @@ int8_t comms_get_joinresp_data(device_config_t *device, protocol_handle_t client
     }
     else
     {
+        /* Get JOINRESP payload data */
+        joinresp_data = (void*)&client.joinresponse_msg->payload;
+
         /* Initialize value of client id / device slot number */
         device->device_slot_number = 0;
 
@@ -350,12 +361,12 @@ int8_t comms_get_joinresp_data(device_config_t *device, protocol_handle_t client
             case JOINRESP_ACK:
 
                 func_retval = client.joinresponse_msg->fixed_header.message_status;
-                device->device_slot_number = atoi(client.joinresponse_msg->payload);
+                device->device_slot_number = atoi(joinresp_data);
 
             case JOINRESP_DUP:
 
                 func_retval = client.joinresponse_msg->fixed_header.message_status;
-                device->device_slot_number  = atoi(client.joinresponse_msg->payload);
+                device->device_slot_number  = atoi(joinresp_data);
 
                 break;
 
@@ -396,6 +407,8 @@ uint8_t comms_status_message(protocol_handle_t *client, device_config_t device, 
     uint8_t payload_length = 0;
     uint8_t payload_index  = 0;
 
+    char *copy_payload;
+
     /* Calculate  message length */
     payload_length = strlen(payload_message);
 
@@ -424,12 +437,14 @@ uint8_t comms_status_message(protocol_handle_t *client, device_config_t device, 
         client->status_msg->destination_client_id = destination_id;
 
         /* Add payload message */
-        strncpy(client->status_msg->payload, payload_message, payload_length);
+        copy_payload = (void*)&client->status_msg->payload;
+
+        memcpy(copy_payload, payload_message, payload_length);
 
         /* Add Message terminator */
         payload_index = payload_length;
 
-        strncpy(client->status_msg->payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
+        strncpy(copy_payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
 
         /* Calculate remaining message length */
         client->status_msg->fixed_header.message_length = COMMS_NETWORK_ID_SIZE + COMMS_SLOTNUM_SIZE + COMMS_DESTINATION_DEVICEID_SIZE + payload_length + \
@@ -488,10 +503,13 @@ int8_t comms_get_statusack(protocol_handle_t client, uint16_t network_id, uint8_
  * @param  device_id         : device slot number / device id
  * @retval int8_t            : error -7, success: message length of payload
  **************************************************************************/
-int8_t comms_get_contrl_data(char *message_buffer, uint8_t* source_client_id, protocol_handle_t device, uint16_t network_id, uint8_t device_id)
+int8_t comms_get_contrl_data(char *message_buffer, uint8_t* source_client_id, protocol_handle_t device,
+                             uint16_t network_id, uint8_t device_id)
 {
     int8_t func_retval    = 0;
     int8_t message_length = 0;
+
+    char *contrl_data;
 
     if(device.contrl_msg == NULL || network_id == 0 || device_id == 0)
     {
@@ -499,6 +517,9 @@ int8_t comms_get_contrl_data(char *message_buffer, uint8_t* source_client_id, pr
     }
     else
     {
+        /* Get CONTRL message data */
+        contrl_data = (void*)&device.contrl_msg->payload;
+
         /* Check if message is for receiving device and on the same network */
         if(device.contrl_msg->network_id == network_id && device.contrl_msg->destination_client_id == device_id)
         {
@@ -506,9 +527,9 @@ int8_t comms_get_contrl_data(char *message_buffer, uint8_t* source_client_id, pr
             *source_client_id = device.contrl_msg->source_client_id;
 
             /* Get payload data */
-            message_length = (int8_t)strlen(device.contrl_msg->payload);
+            message_length = (int8_t)strlen(contrl_data);
 
-            strncpy(message_buffer, device.contrl_msg->payload, (size_t)(message_length - COMMS_TERMINATOR_LENGTH));
+            memcpy(message_buffer, contrl_data, (size_t)(message_length - COMMS_TERMINATOR_LENGTH));
 
             func_retval = message_length - COMMS_TERMINATOR_LENGTH;
         }
@@ -577,12 +598,13 @@ int8_t comms_set_joinresp_message_status(protocol_handle_t *server, int8_t statu
 uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device_server, char *destination_mac, int8_t client_id)
 {
 
-    uint8_t func_retval = 0;
-    char payload_buff[4] = {0};
+    uint8_t func_retval    = 0;
     uint8_t payload_length = 0;
     uint8_t payload_index  = 0;
     uint8_t message_length = 0;
 
+    char *copy_payload;
+    char payload_buff[4] = {0};
 
     if(server == NULL)
     {
@@ -604,20 +626,22 @@ uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device
         server->joinresponse_msg->message_slot_number = COMMS_SERVER_SLOTNUM;
 
         /* Send client id as JOINREQ payload */
-        ltoa((long int)client_id,payload_buff);
+
+        copy_payload = (void*)&server->joinresponse_msg->payload;
+
+        ltoa((long int)client_id, payload_buff);
 
         payload_length = strlen(payload_buff);
 
-        strncpy(server->joinresponse_msg->payload, payload_buff, payload_length);
+        memcpy(copy_payload, payload_buff, payload_length);
 
         /* Add message terminator */
         payload_index = payload_length;
 
-        strncpy(server->joinresponse_msg->payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
+        strncpy(copy_payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
 
         /* Calculate remaining message length */
-        server->joinresponse_msg->fixed_header.message_length = COMMS_MACADDR_SIZE + COMMS_DESTINATION_MACADDR_SIZE + COMMS_NETWORK_ID_SIZE + \
-                COMMS_SLOTNUM_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
+        server->joinresponse_msg->fixed_header.message_length = JOINRESP_HEADER_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
 
         /* Total message Length */
         message_length = server->joinresponse_msg->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
@@ -642,14 +666,15 @@ uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device
  * @param  message_buffer         : message data from status message
  * @param  *source_client_id      : pointer to client/device id of source device
  * @param  *destination_client_id : pointer to client/device id of destination device
- * @retval int8_t                 : error: -9, success: length of status message payload
+ * @retval int16_t                 : error: -9, success: length of status message payload
  ******************************************************************************************/
-int8_t comms_get_status_message(protocol_handle_t server, device_config_t server_device, char *client_payload,
+int16_t comms_get_status_message(protocol_handle_t server, device_config_t server_device, char *client_payload,
                                 uint8_t *source_client_id, uint8_t *destination_client_id)
 {
-    int8_t func_retval            = 0;
-    uint8_t status_payload_length = 0;
+    int16_t func_retval           = 0;
+    int16_t status_payload_length = 0;
 
+    char *status_data;
 
     /* 1-3 slots are reserved can't be taken by any device */
     if(server.status_msg->message_slot_number <= 3)
@@ -659,10 +684,13 @@ int8_t comms_get_status_message(protocol_handle_t server, device_config_t server
     }
     else
     {
+        /* Get Status Data */
+        status_data = (void*)&server.status_msg->payload;
+
         /* Check network ID */
         if(server.status_msg->network_id == server_device.device_network_id)
         {
-            status_payload_length = strlen(server.status_msg->payload);
+            status_payload_length = strlen(status_data) - COMMS_TERMINATOR_LENGTH;
 
             /* get source client id*/
             *source_client_id = server.status_msg->message_slot_number;
@@ -671,7 +699,7 @@ int8_t comms_get_status_message(protocol_handle_t server, device_config_t server
             *destination_client_id = server.status_msg->destination_client_id;
 
             /* get payload data from client, get rid of the terminator */
-            strncpy(client_payload, server.status_msg->payload, status_payload_length - COMMS_TERMINATOR_LENGTH);
+            strncpy(client_payload, status_data, status_payload_length);
 
             func_retval = status_payload_length;
         }
@@ -690,17 +718,18 @@ int8_t comms_get_status_message(protocol_handle_t server, device_config_t server
  * @param  device                 : reference to the server device structure
  * @param  *source_client_id      : reference to client/device id of source device
  * @param  *destination_client_id : reference to client/device id of destination device
- * @param  payload                : CONTRL message payload
+ * @param  *payload               : CONTRL message payload
+ * @param  payload_length         : CONTRL message payload length
  * @retval int8_t                 : error: 0, success: length of CONTRL message payload
  ****************************************************************************************/
-uint8_t comms_control_message(protocol_handle_t *server, device_config_t device, uint8_t source_id, uint8_t destination_id, const char *payload)
+uint8_t comms_control_message(protocol_handle_t *server, device_config_t device, uint8_t source_id,
+                              uint8_t destination_id, const char *payload, uint16_t payload_length)
 {
     uint8_t func_retval    = 0;
-    uint8_t payload_length = 0;
     uint8_t payload_index  = 0;
     uint8_t message_length = 0;
 
-    payload_length = strlen(payload);
+    char *copy_payload;
 
     server->contrl_msg->preamble[0] = (PREAMBLE_CONTRL >> 8) & 0xFF;
     server->contrl_msg->preamble[1] = (PREAMBLE_CONTRL >> 0) & 0xFF;
@@ -712,6 +741,10 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
     server->contrl_msg->source_client_id      = source_id;
     server->contrl_msg->destination_client_id = destination_id;
 
+
+    /* Get payload */
+    copy_payload = (void*)&server->contrl_msg->payload;
+
     /* Client echo condition */
     if(destination_id == source_id)
     {
@@ -720,7 +753,7 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
         server->contrl_msg->source_client_id = device.device_slot_number;
 
         /* add payload */
-        strncpy(server->contrl_msg->payload, payload, payload_length);
+        memcpy(copy_payload, payload, payload_length);
     }
     /* Client not found condition */
     else if(destination_id == 0)
@@ -731,7 +764,7 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
 
         /* add NOT FOUND condition to payload */
         payload_length = 16;
-        strncpy(server->contrl_msg->payload, "DEVICE NOT FOUND", payload_length);
+        memcpy(copy_payload, "DEVICE NOT FOUND", payload_length);
 
     }
     else
@@ -739,18 +772,17 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
         server->contrl_msg->fixed_header.message_status = MESSSAGE_OK;
 
         /* add payload */
-        strncpy(server->contrl_msg->payload, payload, payload_length);
+        memcpy(copy_payload, payload, payload_length);
     }
 
 
     /* add message terminator */
     payload_index = payload_length;
 
-    strncpy(server->contrl_msg->payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
+    strncpy(copy_payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
 
     /* Calculate remaining message length */
-    server->contrl_msg->fixed_header.message_length = COMMS_NETWORK_ID_SIZE + COMMS_SLOTNUM_SIZE + COMMS_SOURCE_DEVICEID_SIZE + \
-            COMMS_DESTINATION_DEVICEID_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
+    server->contrl_msg->fixed_header.message_length = CONTRL_HEADER_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
 
     /* calculate total message length  */
     message_length = server->contrl_msg->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
@@ -758,9 +790,7 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
     /* Get Checksum */
     server->contrl_msg->fixed_header.message_checksum = comms_checksum((char*)server->contrl_msg, 5, message_length);
 
-
     func_retval = message_length;
-
 
     return func_retval;
 }
@@ -782,21 +812,27 @@ int8_t comms_get_joinreq_data(char *client_mac_address, uint8_t *client_requeste
 {
     int8_t  func_retval = 0;
 
+    char *joinreq_data;
+
     if(server.joinrequest_msg == NULL)
     {
         func_retval = -10;
     }
     else
     {
+
+        /* Get JOINREQ data */
+        joinreq_data = (void*)&server.joinrequest_msg->payload;
+
         /* Check network id */
         if( (server.joinrequest_msg->network_id == server_device.device_network_id) && (joinresponse_state == 1) )
         {
 
             /* Get client requested slots */
-            *client_requested_slots = strtol(server.joinrequest_msg->payload, NULL, 10);
+            *client_requested_slots = strtol(joinreq_data, NULL, 10);
 
             /* Get client mac address */
-            strncpy(client_mac_address, server.joinrequest_msg->source_mac, COMMS_MACADDR_SIZE);
+            memcpy(client_mac_address, server.joinrequest_msg->source_mac, COMMS_MACADDR_SIZE);
 
             /* Can be used for as JOINRESP fsm state value */
             func_retval = 4;
@@ -831,7 +867,7 @@ int8_t comms_statusack_message(protocol_handle_t *client, device_config_t device
         client->statusack_msg->preamble[0] = (PREAMBLE_STATUSACK >> 8) & 0xFF;
         client->statusack_msg->preamble[1] = (PREAMBLE_STATUSACK >> 0) & 0xFF;
 
-        if(client_id <= 0)
+        if(client_id == 0)
         {
             client->statusack_msg->fixed_header.message_status = CLIENT_NOT_FOUND;
         }

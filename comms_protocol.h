@@ -266,9 +266,9 @@ uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device
  * @param  message_buffer         : message data from status message
  * @param  *source_client_id      : pointer to client/device id of source device
  * @param  *destination_client_id : pointer to client/device id of destination device
- * @retval int8_t                 : error: -9, success: length of status message payload
+ * @retval int16_t                : error: -9, success: length of status message payload
  ******************************************************************************************/
-int8_t comms_get_status_message(protocol_handle_t server, device_config_t server_device, char *client_payload,
+int16_t comms_get_status_message(protocol_handle_t server, device_config_t server_device, char *client_payload,
                                 uint8_t *source_client_id, uint8_t *destination_client_id);
 
 
@@ -280,10 +280,12 @@ int8_t comms_get_status_message(protocol_handle_t server, device_config_t server
  * @param  device                 : reference to the server device structure
  * @param  *source_client_id      : reference to client/device id of source device
  * @param  *destination_client_id : reference to client/device id of destination device
- * @param  payload                : CONTRL message payload
+ * @param  *payload               : CONTRL message payload
+ * @param  payload_length         : CONTRL message payload length
  * @retval int8_t                 : error: 0, success: length of CONTRL message payload
  ****************************************************************************************/
-uint8_t comms_control_message(protocol_handle_t *server, device_config_t device, uint8_t source_id, uint8_t destination_id, const char *payload);
+uint8_t comms_control_message(protocol_handle_t *server, device_config_t device, uint8_t source_id,
+                              uint8_t destination_id, const char *payload, uint16_t payload_length);
 
 
 

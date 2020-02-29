@@ -126,6 +126,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
     static uint8_t destination_client_id     = 0;    /*!< from status message */
     static uint8_t source_client_id          = 0;
     static char    status_message_buffer[20] = {0};
+    static int16_t status_message_length     = 0;
 
     static int8_t device_found = 0;
 
@@ -176,7 +177,8 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
         wireless_network->sync_message = (void*)send_message_buffer;
 
-        message_length = comms_network_sync_message(wireless_network, server_device->device_network_id, server_device->device_slot_time, "sync");
+        message_length = comms_network_sync_message(wireless_network, server_device->device_network_id,
+                                                    server_device->device_slot_time, "sync", 4);
 
         comms_send(wireless_network, (char*)wireless_network->sync_message, message_length);
 
@@ -293,7 +295,8 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         server.status_msg = (void*)network_buffers->read_message;
 
         /* get destination client and payload from status */
-        comms_get_status_message(server, *server_device, status_message_buffer, &source_client_id, &destination_client_id);
+        status_message_length = comms_get_status_message(server, *server_device, status_message_buffer,
+                                 &source_client_id, &destination_client_id);
 
         if(server_mode == WI_LOCAL_SERVER)
         {
@@ -366,7 +369,8 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
         /* echo condition (compare ID gotten from status message with ID gotten from device table )*/
 
-        message_length = comms_control_message(&server, *server_device, source_client_id, destination_client_id, status_message_buffer);
+        message_length = comms_control_message(&server, *server_device, source_client_id, destination_client_id,
+                                               status_message_buffer, status_message_length);
 
         comms_send(wireless_network, (char*)server.contrl_msg, message_length);
 

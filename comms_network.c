@@ -63,20 +63,18 @@
 /*                                                                            */
 /******************************************************************************/
 
-
-
+#define SYNC_HEADER_SIZE 6
 
 /* Sync Message structure */
 struct _sync_packet
 {
-    char        preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
-    net_header_t fixed_header;                   /*!< Network header             */
-    uint16_t    network_id;                      /*!< Network ID                 */
-    uint8_t     message_slot_number;             /*!< Message slot number        */
-    uint16_t    slot_time;                       /*!< Time interval of each slot */
-    uint8_t     access_slot;                     /*!< Server Access number       */
-    char        payload[COMMS_PAYLOAD_LENGTH];   /*!< Message payload            */
-
+    char         preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
+    net_header_t fixed_header;                    /*!< Network header             */
+    uint16_t     network_id;                      /*!< Network ID                 */
+    uint8_t      message_slot_number;             /*!< Message slot number        */
+    uint16_t     slot_time;                       /*!< Time interval of each slot */
+    uint8_t      access_slot;                     /*!< Server Access number       */
+    uint8_t      payload;                         /*!< Message payload            */
 };
 
 
@@ -1255,17 +1253,19 @@ int8_t get_sync_data(device_config_t *client_device, char *message_payload ,acce
 
 /***********************************************************************
  * @brief  Function to configure sync message
- * @param  *network         : reference to network handle structure
- * @param  *message_payload : message payload from syncmessage
+ * @param  *server_device   : reference to server device network handle
  * @param  network          : network handle structure
+ * @param  *message_payload : message payload from sync message
+ * @param  payload_size     : payload size
  * @retval int8_t           : error: 0, success: length of message
  ***********************************************************************/
-uint8_t comms_network_sync_message(access_control_t *network, uint16_t network_id, uint16_t slot_time, char *payload)
+uint8_t comms_network_sync_message(access_control_t *network, uint16_t network_id, uint16_t slot_time,
+                                   char *payload, uint16_t payload_length)
 {
     uint8_t func_retval    = 0;
-    uint8_t payload_length = 0;
     uint8_t message_length = 0;
     uint8_t payload_index  = 0;
+    char    *copy_payload  = 0;
 
     /* Check parameter error */
     if( network == NULL || slot_time > MAX_SLOT_TIME || payload == NULL)
@@ -1274,8 +1274,6 @@ uint8_t comms_network_sync_message(access_control_t *network, uint16_t network_i
     }
     else
     {
-        payload_length = strlen(payload);
-
         /* check length error */
         if(payload_length > COMMS_PAYLOAD_LENGTH - COMMS_TERMINATOR_LENGTH )
         {
@@ -1297,20 +1295,21 @@ uint8_t comms_network_sync_message(access_control_t *network, uint16_t network_i
             network->sync_message->slot_time = slot_time;
 
             /* Add payload message */
-            strncpy(network->sync_message->payload, payload, payload_length);
+            copy_payload = (void*)&network->sync_message->payload;
+
+            memcpy(copy_payload, payload, payload_length);
 
             payload_index = payload_length;
 
             /* Add message terminator */
-            strncpy(network->sync_message->payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
+            strncpy(copy_payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
 
             /* Calculate remaining length */
-            network->sync_message->fixed_header.message_length = COMMS_SLOTNUM_SIZE + COMMS_NETWORK_ID_SIZE + COMMS_ACCESS_SLOT_SIZE + \
-                    COMMS_SLOT_TIME_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
+            network->sync_message->fixed_header.message_length = SYNC_HEADER_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
 
             message_length = network->sync_message->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
 
-            /* Calculate checksum Length of fixed header + preamble = 5 */
+            /* Calculate checksum Length of fixed header + PREAMBLE = 5 */
             network->sync_message->fixed_header.message_checksum = comms_network_checksum((char*)network->sync_message, 5 , message_length);
 
             func_retval = message_length;

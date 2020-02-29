@@ -197,8 +197,8 @@ typedef struct _wi_network_header
 /* Network message structure */
 struct _network_message
 {
-    char        preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble */
-    net_header_t fixed_header;                   /*!< Network Header   */
+    char         preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble */
+    net_header_t fixed_header;                    /*!< Network Header   */
 
 };
 
@@ -469,9 +469,11 @@ int8_t get_sync_data(device_config_t *client_device, char *message_payload ,acce
  * @param  *server_device   : reference to server device network handle
  * @param  network          : network handle structure
  * @param  *message_payload : message payload from sync message
+ * @param  payload_size     : payload size
  * @retval int8_t           : error: 0, success: length of message
  ***********************************************************************/
-uint8_t comms_network_sync_message(access_control_t *server_device, uint16_t network_id, uint16_t slot_time, char *payload);
+uint8_t comms_network_sync_message(access_control_t *server_device, uint16_t network_id, uint16_t slot_time,
+                                   char *payload, uint16_t payload_size);
 
 
 

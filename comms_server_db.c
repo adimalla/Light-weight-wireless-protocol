@@ -42,6 +42,12 @@
 
 
 
+/* Note:-
+ *
+ * Table locks not implemented and tested.
+ * */
+
+
 /*
  * Standard Header and API Header files
  */
