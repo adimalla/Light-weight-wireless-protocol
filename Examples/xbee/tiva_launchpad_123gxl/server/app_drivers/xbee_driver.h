@@ -14,7 +14,7 @@
 
 void init_xbee_comm(void);
 
-int8_t xbee_send(char* message_buffer, uint8_t message_length);
+int8_t xbee_send(char* message_buffer, uint16_t message_length);
 
 
 #endif /* XBEE_DRIVER_H_ */

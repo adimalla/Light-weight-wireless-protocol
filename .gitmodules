@@ -1,0 +1,3 @@
+[submodule "Examples/xbee/tiva_launchpad_123gxl/clTerm"]
+	path = Examples/xbee/tiva_launchpad_123gxl/clTerm
+	url = https://github.com/adimalla/clTerm
