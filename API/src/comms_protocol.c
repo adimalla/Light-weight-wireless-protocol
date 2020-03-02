@@ -75,12 +75,12 @@ typedef struct _join_options
 }join_opts_t;
 
 
-/* */
+/* Slot request and network name and password */
 typedef struct _join_username_password
 {
-    uint8_t  slots_requested;
-    char     user_name[10];
-    uint8_t  password[10];
+    uint8_t  slots_requested;  /*!< Number of slots requested */
+    char     user_name[10];    /*!< Network user name         */
+    uint8_t  password[10];     /*!< Network Password          */
 
 }join_user_pswd_t;
 
@@ -258,10 +258,8 @@ uint8_t comms_joinreq_message(protocol_handle_t *client, device_config_t device,
 {
 
     int8_t func_retval     = 0;
-    uint8_t payload_index  = 0;
     uint8_t payload_length = 0;
     uint8_t message_length = 0;
-    char    payload_buff[4] = {0};
 
     join_user_pswd_t *join_options_2;
 
@@ -310,6 +308,7 @@ uint8_t comms_joinreq_message(protocol_handle_t *client, device_config_t device,
 
         memcpy(join_options_2->password, device.password, 10);
 
+        /* Join option 2 length, slot(1) + name(10) + password(10) = 21 */
         payload_length = 21;
 
         /* Null terminator */
@@ -322,7 +321,6 @@ uint8_t comms_joinreq_message(protocol_handle_t *client, device_config_t device,
 
         /* Total message Length */
         message_length = client->joinrequest_msg->fixed_header.message_length + NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
-
 
         /* Calculate checksum */
         client->joinrequest_msg->fixed_header.message_checksum = comms_checksum((char*)client->joinrequest_msg, 5, message_length);
