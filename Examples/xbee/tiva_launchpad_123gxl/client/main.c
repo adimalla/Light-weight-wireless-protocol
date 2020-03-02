@@ -127,20 +127,6 @@ comms_network_buffer_t read_buffer;
 
 
 
- int8_t rst_timer(void)
- {
-
-     /* Reset Send Timer */
-     WTIMER5_CTL_R &= ~TIMER_CTL_TAEN;
-     while(!( SYSCTL_PRWTIMER_R & (1 << 5)) );
-     WTIMER5_TAV_R = 0;
-     WTIMER5_CTL_R |= TIMER_CTL_TAEN;
-
-
-     return 0;
- }
-
-
 
  /* Link Protocol functions */
  network_operations_t net_ops =
@@ -153,6 +139,7 @@ comms_network_buffer_t read_buffer;
   .recv_activity_status = recv_led_status,
   .send_activity_status = send_led_status,
   .clear_status         = clear_led_status,
+  .net_connected_status = net_join_status,
   .net_debug_print      = debug_print,
  };
 

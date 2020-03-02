@@ -130,6 +130,19 @@ int8_t set_tx_timer(uint16_t device_slot_time, uint8_t device_slot_number)
 }
 
 
+int8_t rst_timer(void)
+{
+
+    /* Reset Send Timer */
+    WTIMER5_CTL_R &= ~TIMER_CTL_TAEN;
+    while(!( SYSCTL_PRWTIMER_R & (1 << 5)) );
+    WTIMER5_TAV_R = 0;
+    WTIMER5_CTL_R |= TIMER_CTL_TAEN;
+
+
+    return 0;
+}
+
 
 
 /******************************************************************************/
