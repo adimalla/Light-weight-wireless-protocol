@@ -194,8 +194,6 @@ void uart1ISR(void)
 }
 
 
-char user_name[10]   = "sens_net";
-uint8_t password[10] = "1234";
 
 device_config_t *client_device;
 
@@ -210,10 +208,13 @@ void wTimer5Isr(void)
 
     wireless_network = create_network_handle(&net_ops);
 
-    client_device = create_client_device("20:20:14:15:16:17", REQUESTED_SLOTS, user_name, password);
+    char user_name[10]   = "sens_net";
+    uint8_t password[10] = "1234";
+
+    client_device = create_client_device("10:20:14:15:16:17", REQUESTED_SLOTS, user_name, password);
 
     /* Init client state machine */
-    comms_start_client(wireless_network, client_device, &read_buffer, 4);
+    comms_start_client(wireless_network, client_device, &read_buffer, 5);
 }
 
 

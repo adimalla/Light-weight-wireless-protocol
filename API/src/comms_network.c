@@ -492,7 +492,7 @@ device_config_t* create_server_device(char *mac_address, uint16_t network_id, ui
         memset(server_device.user_name, 0, 10);
         memset(server_device.password, 0, 10);
 
-        strcpy(server_device.user_name, user_name);
+        strncpy(server_device.user_name, user_name, 10);
 
         memcpy(server_device.password, password, 10);
 
@@ -534,7 +534,7 @@ device_config_t* create_client_device(char *mac_address, uint8_t requested_total
         memset(client_device.user_name, 0, 10);
         memset(client_device.password, 0, 10);
 
-        strcpy(client_device.user_name, user_name);
+        strncpy(client_device.user_name, user_name, 10);
 
         memcpy(client_device.password, password, 10);
 
