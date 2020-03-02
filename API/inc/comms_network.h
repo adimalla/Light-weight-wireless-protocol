@@ -138,7 +138,7 @@ typedef struct _comms_network_buffer
     char            read_message[NET_DATA_LENGTH];         /*!< Read message buffer for valid messages, filled by network */
     char            application_message[NET_DATA_LENGTH];  /*!< Application message buffer, filled by application         */
     char            network_message[NET_DATA_LENGTH];      /*!< Network message buffer, filled by network                 */
-    uint16_t        app_message_length;                    /*!< */
+    uint16_t        app_message_length;                    /*!< Application message length                                */
     message_flags_t flag_state;                            /*!< Network message flag states                               */
     uint8_t         source_id;                             /*!< Network message source ID                                 */
     uint8_t         destination_id;                        /*!< Network Message destination ID                            */
@@ -324,14 +324,12 @@ int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size);
 /******************************************************************************/
 
 
-
 /************************************************************
  * @brief  Function to enable sync activity status
  * @param  *network  : reference to network handle structure
  * @retval int8_t    : error = -8, success = 0
  ************************************************************/
 int8_t comms_sync_status(access_control_t *network);
-
 
 
 /************************************************************
@@ -342,7 +340,6 @@ int8_t comms_sync_status(access_control_t *network);
 int8_t comms_send_status(access_control_t *network);
 
 
-
 /************************************************************
  * @brief  Function to enable receive activity status
  * @param  *network  : reference to network handle structure
@@ -351,15 +348,12 @@ int8_t comms_send_status(access_control_t *network);
 int8_t comms_recv_status(access_control_t *network);
 
 
-
 /************************************************************
  * @brief  Function to enable clear activity status
  * @param  *network  : reference to network handle structure
  * @retval int8_t    : error = -11, success = 0
  ************************************************************/
 int8_t comms_clear_activity(access_control_t *network);
-
-
 
 
 /************************************************************
@@ -404,7 +398,6 @@ int8_t comms_joinresp_debug_print(access_control_t *network, char *debug_message
 
 
 
-
 /***********************************************************************
  * @brief  Function to print status message debug
  *         Prints: " STATUS (DID:x LEN:x) DATA: 'message' "
@@ -416,8 +409,6 @@ int8_t comms_joinresp_debug_print(access_control_t *network, char *debug_message
  ***********************************************************************/
 int8_t comms_status_debug_print(access_control_t *network, char *debug_message, uint8_t destination_id,
                                 char *payload_data);
-
-
 
 
 /*******************************************************************

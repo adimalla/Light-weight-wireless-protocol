@@ -14,7 +14,7 @@
 
 
 
-void init_clock(void);
+void init_clocks(void);
 
 void init_board_io(void);
 
