@@ -26,7 +26,7 @@ void init_wide_timer_5(void);
 
 int8_t set_tx_timer(uint16_t device_slot_time, uint8_t device_slot_number);
 
-int8_t reset_timer(void);
+int8_t rst_timer(void);
 
 
 int8_t sync_led_status(void);
@@ -35,9 +35,9 @@ int8_t recv_led_status(void);
 
 int8_t send_led_status(void);
 
-int8_t network_joined_status(void);
-
 int8_t clear_led_status(void);
 
+int8_t net_join_status(void);
 
-#endif /* EXAMPLES_XBEE_TIVA_LAUNCHPAD_123GXL_CLIENT_APP_DRIVERS_APPLICATION_FUNCTIONS_H_ */
+
+#endif /* APPLICATION_FUNCTIONS_H_ */

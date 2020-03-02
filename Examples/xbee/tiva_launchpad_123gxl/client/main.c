@@ -127,10 +127,25 @@ comms_network_buffer_t read_buffer;
 
 
 
+ int8_t rst_timer(void)
+ {
+
+     /* Reset Send Timer */
+     WTIMER5_CTL_R &= ~TIMER_CTL_TAEN;
+     while(!( SYSCTL_PRWTIMER_R & (1 << 5)) );
+     WTIMER5_TAV_R = 0;
+     WTIMER5_CTL_R |= TIMER_CTL_TAEN;
+
+
+     return 0;
+ }
+
+
+
  /* Link Protocol functions */
  network_operations_t net_ops =
  {
-  .reset_tx_timer       = reset_timer,
+  .reset_tx_timer       = rst_timer,
   .clear_recv_interrupt = clear_uart_recv_interrupt,
   .send_message         = xbee_send,
   .set_tx_timer         = set_tx_timer,
@@ -138,7 +153,6 @@ comms_network_buffer_t read_buffer;
   .recv_activity_status = recv_led_status,
   .send_activity_status = send_led_status,
   .clear_status         = clear_led_status,
-  .net_connected_status = network_joined_status,
   .net_debug_print      = debug_print,
  };
 
@@ -181,12 +195,6 @@ void uart1ISR(void)
     static uint8_t rx_index;
 
     access_control_t *network;
-
-    network_operations_t net_ops =
-    {
-     .reset_tx_timer = reset_timer,
-     .clear_recv_interrupt = clear_uart_recv_interrupt,
-    };
 
     network = create_network_handle(&net_ops);
 
@@ -232,7 +240,7 @@ int main(void)
 
     char text_buffer[NET_DATA_LENGTH] = {0};
 
-    init_clock();
+    init_clocks();
 
     init_board_io();
 

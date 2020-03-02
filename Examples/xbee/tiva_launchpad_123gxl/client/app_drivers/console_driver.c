@@ -45,6 +45,7 @@
  * Standard header and driver header files
  */
 #include <stdint.h>
+#include <string.h>
 #include "console_driver.h"
 
 #include "gpio_tm4c123gh6pm.h"
@@ -80,6 +81,8 @@ static uint8_t init_uart(gpio_port_t *gpio_port_addr, uart_periph_t *port_addres
 
     gpio_handle_t console_io;
     uart_handle_t console_uart;
+
+    init_clock();
 
     memset(&console_io, 0, sizeof(console_io));
 

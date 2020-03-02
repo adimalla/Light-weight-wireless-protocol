@@ -46,7 +46,7 @@
 /******************************************************************************/
 
 
-void init_clock(void)
+void init_clocks(void)
 {
     //******************************************************* Clock Configs ******************************************************************//
 
@@ -130,18 +130,6 @@ int8_t set_tx_timer(uint16_t device_slot_time, uint8_t device_slot_number)
 }
 
 
-int8_t reset_timer(void)
-{
-
-    /* Reset Send Timer */
-    WTIMER5_CTL_R &= ~TIMER_CTL_TAEN;
-    while(!( SYSCTL_PRWTIMER_R & (1 << 5)) );
-    WTIMER5_TAV_R = 0;
-    WTIMER5_CTL_R |= TIMER_CTL_TAEN;
-
-
-    return 0;
-}
 
 
 /******************************************************************************/
@@ -180,14 +168,13 @@ int8_t send_led_status(void)
 }
 
 
-int8_t network_joined_status(void)
+int8_t net_join_status(void)
 {
     ONBOARD_BLUE_LED  ^= 1;
     ONBOARD_GREEN_LED ^= 1;
 
     return 0;
 }
-
 
 
 int8_t clear_led_status(void)
