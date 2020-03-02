@@ -194,7 +194,7 @@ void uart1ISR(void)
 }
 
 
-char user_name[10]   = "device1";
+char user_name[10]   = "sens_net";
 uint8_t password[10] = "1234";
 
 device_config_t *client_device;
