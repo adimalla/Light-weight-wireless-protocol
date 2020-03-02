@@ -1,0 +1,3 @@
+[submodule "clTerm"]
+	path = clTerm
+	url = https://github.com/adimalla/clTerm
