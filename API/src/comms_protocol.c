@@ -150,7 +150,6 @@ struct _statusack
 
 
 
-
 /* Protocol codes */
 typedef enum _protocol_api_retval
 {
