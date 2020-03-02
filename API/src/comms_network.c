@@ -460,7 +460,8 @@ access_control_t* create_network_handle(network_operations_t *network_ops)
  * @param  total_slots           : no of existing slots at start
  * @retval device_config_t       : error: NULL, success: address of the created object
  **************************************************************************************/
-device_config_t* create_server_device(char *mac_address, uint16_t network_id, uint16_t device_slot_time, uint8_t total_slots)
+device_config_t* create_server_device(char *mac_address, uint16_t network_id, uint16_t device_slot_time, uint8_t total_slots,
+                                      char *user_name, uint8_t *password)
 {
 
     static device_config_t server_device;
@@ -487,6 +488,14 @@ device_config_t* create_server_device(char *mac_address, uint16_t network_id, ui
         if(total_slots > server_device.total_slots)
             server_device.total_slots = total_slots;
 
+        /* Server User name and password */
+        memset(server_device.user_name, 0, 10);
+        memset(server_device.password, 0, 10);
+
+        strncpy(server_device.user_name, user_name, 10);
+
+        memcpy(server_device.password, password, 10);
+
     }
 
     return &server_device;
@@ -499,9 +508,12 @@ device_config_t* create_server_device(char *mac_address, uint16_t network_id, ui
  * @brief  Constructor function to create client device configure object
  * @param  *mac_address          : mac_address of the server device
  * @param  requested_total_slots : number of slots requested
+ *
+ *
  * @retval device_config_t       : error: NULL, success: address of the created object
  **************************************************************************************/
-device_config_t* create_client_device(char *mac_address, uint8_t requested_total_slots)
+device_config_t* create_client_device(char *mac_address, uint8_t requested_total_slots, char *user_name,
+                                      uint8_t *password)
 {
 
     static device_config_t client_device;
@@ -517,6 +529,15 @@ device_config_t* create_client_device(char *mac_address, uint8_t requested_total
 
         /* requested slots are the total slots held by the client device */
         client_device.total_slots = requested_total_slots;
+
+        /* get user name and password */
+        memset(client_device.user_name, 0, 10);
+        memset(client_device.password, 0, 10);
+
+        strncpy(client_device.user_name, user_name, 10);
+
+        memcpy(client_device.password, password, 10);
+
     }
 
     return &client_device;

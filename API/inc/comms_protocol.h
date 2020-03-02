@@ -117,7 +117,6 @@ typedef struct _status status_t;      /*!< STATUS message structure   */
 
 typedef struct _contrl contrl_t;      /*!< CONTRL message structure   */
 
-
 typedef struct _statusack statusack_t;  /*!< STATUSACK message structure   */
 
 

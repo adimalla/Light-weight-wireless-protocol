@@ -134,7 +134,6 @@ int8_t comms_start_client(access_control_t *wireless_network, device_config_t *c
                 /* calibrate timer to access slot */
                 comms_network_set_timer(wireless_network, client_device, NET_CLIENT_ACCESS_SLOT);
 
-
                 fsm_state = DEV_JOINREQ;
             }
 
@@ -219,7 +218,6 @@ int8_t comms_start_client(access_control_t *wireless_network, device_config_t *c
             network_buffers->flag_state = CLEAR_FLAG;
 
         }
-
 
         break;
 

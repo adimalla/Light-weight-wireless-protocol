@@ -85,6 +85,8 @@ typedef struct _device_config
     uint8_t   total_slots;               /*!< Total number of slots, user defined, changes in server on runtime    */
     uint8_t   network_joined;            /*!< Network Joined State, changed by client on runtime                   */
     uint8_t   device_count;              /*!< Current number of device connected to the server, changes on runtime */
+    char      user_name[10];
+    uint8_t   password[10];
 
 }device_config_t;
 
@@ -125,6 +127,7 @@ typedef struct _application_flags
     uint8_t network_joined_state      : 1;  /*!< Network joined state, client controlled               */
     uint8_t application_message_ready : 1;  /*!< App message ready flag, user enabled                  */
     uint8_t network_message_ready     : 1;  /*!< Network message ready flag, client/ server controlled */
+    uint8_t reserved;
 
 }app_flags_t;
 
@@ -241,19 +244,24 @@ access_control_t* create_network_handle(network_operations_t *network_ops);
  * @param  network_id            : network id of the server
  * @param  device_slot_time      : slot time interval
  * @param  total_slots           : no of existing slots at start
+ *
+ *
  * @retval device_config_t       : error: NULL, success: address of the created object
  **************************************************************************************/
-device_config_t* create_server_device(char *mac_address, uint16_t network_id, uint16_t device_slot_time,
-                                      uint8_t total_slots);
+device_config_t* create_server_device(char *mac_address, uint16_t network_id, uint16_t device_slot_time, uint8_t total_slots,
+                                      char *user_name, uint8_t *password);
 
 
 /**************************************************************************************
  * @brief  Constructor function to create client device configure object
  * @param  *mac_address          : mac_address of the server device
  * @param  requested_total_slots : number of slots requested
+ *
+ *
  * @retval device_config_t       : error: NULL, success: address of the created object
  **************************************************************************************/
-device_config_t* create_client_device(char *mac_address, uint8_t requested_total_slots);
+device_config_t* create_client_device(char *mac_address, uint8_t requested_total_slots, char *user_name,
+                                      uint8_t *password);
 
 
 /*******************************************************************
