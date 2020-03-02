@@ -194,6 +194,11 @@ void uart1ISR(void)
 }
 
 
+char user_name[10]   = "device1";
+uint8_t password[10] = "1234";
+
+device_config_t *client_device;
+
 /* Message TX ISR */
 void wTimer5Isr(void)
 {
@@ -205,13 +210,10 @@ void wTimer5Isr(void)
 
     wireless_network = create_network_handle(&net_ops);
 
-    device_config_t *client_device;
-
-    client_device = create_client_device("10:20:14:15:16:17", REQUESTED_SLOTS);
+    client_device = create_client_device("20:20:14:15:16:17", REQUESTED_SLOTS, user_name, password);
 
     /* Init client state machine */
-    comms_start_client(wireless_network, client_device, &read_buffer, 5);
-
+    comms_start_client(wireless_network, client_device, &read_buffer, 4);
 }
 
 
@@ -234,7 +236,6 @@ int main(void)
     init_xbee_comm();
 
     init_wide_timer_5();
-
 
     /* Open Console */
     console = console_open(&serial_ops, 115200, text_buffer, CONSOLE_STATIC);
@@ -261,7 +262,6 @@ int main(void)
         {
             console_print(console, "Not Connected to network \n");
         }
-
 
     }
 

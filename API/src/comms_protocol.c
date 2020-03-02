@@ -75,6 +75,16 @@ typedef struct _join_options
 }join_opts_t;
 
 
+/* */
+typedef struct _join_username_password
+{
+    uint8_t  slots_requested;
+    char     user_name[10];
+    uint8_t  password[10];
+
+}join_user_pswd_t;
+
+
 /* JOINREQ message structure */
 struct _joinreq
 {
@@ -88,6 +98,7 @@ struct _joinreq
     uint8_t        payload;                        /*!< JOINREQ message payload    */
 
 };
+
 
 
 /* JOINRESP message structure */
@@ -235,6 +246,7 @@ int8_t comms_joinreq_options(protocol_handle_t *client, uint8_t qos, uint8_t kee
 }
 
 
+
 /*******************************************************************
  * @brief  Function to configure JOINREQ message
  * @param  *client         : pointer to comms protocol handle
@@ -250,6 +262,8 @@ uint8_t comms_joinreq_message(protocol_handle_t *client, device_config_t device,
     uint8_t payload_length = 0;
     uint8_t message_length = 0;
     char    payload_buff[4] = {0};
+
+    join_user_pswd_t *join_options_2;
 
     char *copy_payload;
 
@@ -288,20 +302,20 @@ uint8_t comms_joinreq_message(protocol_handle_t *client, device_config_t device,
 
         /* Add payload message */
 
-        copy_payload = (void*)&client->joinrequest_msg->payload;
+        join_options_2 = (void*)&client->joinrequest_msg->payload;
 
-        ltoa((long int)requested_slots, payload_buff);
+        join_options_2->slots_requested = requested_slots;
 
-        payload_length = strlen(payload_buff);
+        strcpy(join_options_2->user_name, device.user_name);
 
-        memcpy(copy_payload, payload_buff, payload_length);
+        memcpy(join_options_2->password, device.password, 10);
 
+        payload_length = 21;
 
-        /* Add message terminator */
-        payload_index = payload_length;
+        /* Null terminator */
+        copy_payload = (void*)((uint8_t*)&client->joinrequest_msg->payload + 21);
 
-        strncpy(copy_payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
-
+        strncpy(copy_payload, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
 
         /* Calculate remaining length */
         client->joinrequest_msg->fixed_header.message_length = JOINREQ_HEADER_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
@@ -801,7 +815,7 @@ int8_t comms_get_joinreq_data(char *client_mac_address, uint8_t *client_requeste
 {
     int8_t  func_retval = 0;
 
-    char *joinreq_data;
+    join_user_pswd_t *join_options_2;
 
     if(server.joinrequest_msg == NULL)
     {
@@ -811,16 +825,16 @@ int8_t comms_get_joinreq_data(char *client_mac_address, uint8_t *client_requeste
     {
 
         /* Get JOINREQ data */
-        joinreq_data = (void*)&server.joinrequest_msg->payload;
+        join_options_2 = (void*)&server.joinrequest_msg->payload;
 
         /* Check network id */
         if( (server.joinrequest_msg->network_id == server_device.device_network_id) && (joinresponse_state == 1) )
         {
 
             /* Get client requested slots */
-            *client_requested_slots = strtol(joinreq_data, NULL, 10);
+            *client_requested_slots = join_options_2->slots_requested;
 
-            /* Get client mac address */
+            /* Get client MAC address */
             memcpy(client_mac_address, server.joinrequest_msg->source_mac, NET_MAC_SIZE);
 
             /* Can be used for as JOINRESP fsm state value */
