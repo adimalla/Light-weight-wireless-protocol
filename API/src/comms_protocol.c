@@ -673,7 +673,7 @@ uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device
  * @retval int16_t                 : error: -9, success: length of status message payload
  ******************************************************************************************/
 int16_t comms_get_status_message(protocol_handle_t server, device_config_t server_device, char *client_payload,
-                                uint8_t *source_client_id, uint8_t *destination_client_id)
+                                 uint8_t *source_client_id, uint8_t *destination_client_id)
 {
     int16_t func_retval           = 0;
     int16_t status_payload_length = 0;
@@ -831,14 +831,20 @@ int8_t comms_get_joinreq_data(char *client_mac_address, uint8_t *client_requeste
         if( (server.joinrequest_msg->network_id == server_device.device_network_id) && (joinresponse_state == 1) )
         {
 
-            /* Get client requested slots */
-            *client_requested_slots = join_options_2->slots_requested;
+            /* Authentication check */
+            if( (strncmp(server_device.user_name, join_options_2->user_name, 10) == 0 ) && \
+                    (memcmp(server_device.password, join_options_2->password, 10) == 0 ) )
+            {
+                /* Get client requested slots */
+                *client_requested_slots = join_options_2->slots_requested;
 
-            /* Get client MAC address */
-            memcpy(client_mac_address, server.joinrequest_msg->source_mac, NET_MAC_SIZE);
+                /* Get client MAC address */
+                memcpy(client_mac_address, server.joinrequest_msg->source_mac, NET_MAC_SIZE);
 
-            /* Can be used for as JOINRESP fsm state value */
-            func_retval = 4;
+                /* Can be used for as JOINRESP fsm state value */
+                func_retval = 4;
+            }
+
         }
 
     }

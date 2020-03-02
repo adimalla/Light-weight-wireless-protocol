@@ -460,7 +460,8 @@ access_control_t* create_network_handle(network_operations_t *network_ops)
  * @param  total_slots           : no of existing slots at start
  * @retval device_config_t       : error: NULL, success: address of the created object
  **************************************************************************************/
-device_config_t* create_server_device(char *mac_address, uint16_t network_id, uint16_t device_slot_time, uint8_t total_slots)
+device_config_t* create_server_device(char *mac_address, uint16_t network_id, uint16_t device_slot_time, uint8_t total_slots,
+                                      char *user_name, uint8_t *password)
 {
 
     static device_config_t server_device;
@@ -486,6 +487,14 @@ device_config_t* create_server_device(char *mac_address, uint16_t network_id, ui
         /* Avoid reinitization of slots if called in ISR, (new object is created at every call) */
         if(total_slots > server_device.total_slots)
             server_device.total_slots = total_slots;
+
+        /* Server User name and password */
+        memset(server_device.user_name, 0, 10);
+        memset(server_device.password, 0, 10);
+
+        strcpy(server_device.user_name, user_name);
+
+        memcpy(server_device.password, password, 10);
 
     }
 

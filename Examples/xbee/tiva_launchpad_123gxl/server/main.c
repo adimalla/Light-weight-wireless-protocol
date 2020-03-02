@@ -103,7 +103,8 @@ void uart1ISR(void)
 
 }
 
-
+char user_name[10]   = "sens_net";
+uint8_t password[10] = "1234";
 
 void wTimer5Isr(void)
 {
@@ -117,7 +118,7 @@ void wTimer5Isr(void)
 
     device_config_t *server_device;
 
-    server_device = create_server_device("11:22:33:44:55:66", 1441, SLOT_TIME_MS, STARTING_SLOTS);
+    server_device = create_server_device("11:22:33:44:55:66", 1441, SLOT_TIME_MS, STARTING_SLOTS, user_name, password);
 
     /* non object based, easy to debug */
     static client_devices_t client_devices[CLIENT_TABLE_SIZE];

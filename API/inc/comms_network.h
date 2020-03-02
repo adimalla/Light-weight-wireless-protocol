@@ -244,10 +244,12 @@ access_control_t* create_network_handle(network_operations_t *network_ops);
  * @param  network_id            : network id of the server
  * @param  device_slot_time      : slot time interval
  * @param  total_slots           : no of existing slots at start
+ *
+ *
  * @retval device_config_t       : error: NULL, success: address of the created object
  **************************************************************************************/
-device_config_t* create_server_device(char *mac_address, uint16_t network_id, uint16_t device_slot_time,
-                                      uint8_t total_slots);
+device_config_t* create_server_device(char *mac_address, uint16_t network_id, uint16_t device_slot_time, uint8_t total_slots,
+                                      char *user_name, uint8_t *password);
 
 
 /**************************************************************************************
