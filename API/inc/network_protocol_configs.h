@@ -70,6 +70,14 @@
 #define COMMS_UNJOIN_MESSAGE     9
 
 
+/* Message Header Lengths */
+#define JOINREQ_HEADER_SIZE   16
+#define JOINRESP_HEADER_SIZE  15
+#define STATUS_HEADER_SIZE    4
+#define CONTRL_HEADER_SIZE    5
+#define STATUSACK_HEADER_SIZE 4
+
+
 
 /* Network slot defines */
 /* Server slot number is a ranked slot number, also used for sync message slot, changes with number of device */
@@ -77,21 +85,18 @@
 #define COMMS_ACCESS_SLOTNUM        2
 #define COMMS_BROADCAST_SLOTNUM     3
 #define COMMS_SYNC_SLOTNUM          COMMS_SERVER_SLOTNUM
-#define COMMS_MESSAGE_LENGTH        64
 
 
 /* Generic message size defines */
-#define COMMS_PREAMBLE_LENTH            2
-#define COMMS_FIXED_HEADER_LENGTH       3
-#define COMMS_CHECKSUM_SIZE             1
-#define COMMS_MACADDR_SIZE              6
-#define COMMS_SOURCE_MACADDR_SIZE       6
-#define COMMS_DESTINATION_MACADDR_SIZE  6
-#define COMMS_NETWORK_ID_SIZE           2
-#define COMMS_SLOTNUM_SIZE              1
-#define COMMS_PAYLOAD_LENGTH            20
-#define COMMS_MESSAGE_TERMINATOR        "\rt"
-#define COMMS_TERMINATOR_LENGTH         2
+#define NET_MTU_SIZE           128
+#define NET_DATA_LENGTH        64
+#define NET_MAC_SIZE           6
+#define NET_PREAMBLE_LENTH     2
+
+#define COMMS_FIXED_HEADER_LENGTH  3
+#define COMMS_CHECKSUM_SIZE        1
+#define COMMS_MESSAGE_TERMINATOR   "\rt"
+#define COMMS_TERMINATOR_LENGTH    2
 
 
 /* Sync Message size defines  */

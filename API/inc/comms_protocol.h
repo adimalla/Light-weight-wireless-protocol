@@ -118,19 +118,7 @@ typedef struct _status status_t;      /*!< STATUS message structure   */
 typedef struct _contrl contrl_t;      /*!< CONTRL message structure   */
 
 
-
-/* Not tested */
-typedef struct _statusack
-{
-    char           preamble[PREAMBLE_LENGTH]; /*!< */
-    comms_header_t fixed_header;              /*!< */
-    uint16_t       network_id;                /*!< */
-    uint8_t        message_slot_number;       /*!< */
-    uint8_t        destination_client_id;     /*!< */
-    char           payload[PAYLOAD_LENGTH];   /*!< */
-
-}statusack_t;
-
+typedef struct _statusack statusack_t;  /*!< STATUSACK message structure   */
 
 
 /* Protocol Message handle */
@@ -196,9 +184,11 @@ int8_t comms_get_joinresp_data(device_config_t *device, protocol_handle_t client
  * @param  device          : client device structure
  * @param  destination_id  : destination id of device to send the status message to
  * @param  payload_message : Message payload to be sent to the destination device
+ *
  * @retval uint8_t         : error 0, success: length of message
  ***********************************************************************s*************/
-uint8_t comms_status_message(protocol_handle_t *client, device_config_t device, uint8_t destination_id, const char *payload_message);
+uint8_t comms_status_message(protocol_handle_t *client, device_config_t device, uint8_t destination_id,
+                             const char *payload_message, uint16_t payload_length);
 
 
 

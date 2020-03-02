@@ -64,11 +64,6 @@
 /******************************************************************************/
 
 
-#define JOINREQ_HEADER_SIZE  16
-#define JOINRESP_HEADER_SIZE 15
-
-#define CONTRL_HEADER_SIZE   5
-
 /* JOINREQ options */
 typedef struct _join_options
 {
@@ -83,14 +78,14 @@ typedef struct _join_options
 /* JOINREQ message structure */
 struct _joinreq
 {
-    char           preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
-    comms_header_t fixed_header;                    /*!< Network header             */
-    char           source_mac[6];                   /*!< Source mac address         */
-    char           destination_mac[6];              /*!< Destination mac address    */
-    uint16_t       network_id;                      /*!< Network ID                 */
-    uint8_t        message_slot_number;             /*!< Device/Message slot number */ /*Can be used as requested id */
-    join_opts_t    join_options;                    /*!< JOINREQ message options    */
-    uint8_t        payload;                         /*!< JOINREQ message payload    */
+    char           preamble[NET_PREAMBLE_LENTH];   /*!< Message preamble           */
+    comms_header_t fixed_header;                   /*!< Network header             */
+    char           source_mac[NET_MAC_SIZE];       /*!< Source mac address         */
+    char           destination_mac[NET_MAC_SIZE];  /*!< Destination mac address    */
+    uint16_t       network_id;                     /*!< Network ID                 */
+    uint8_t        message_slot_number;            /*!< Device/Message slot number */ /*Can be used as requested id */
+    join_opts_t    join_options;                   /*!< JOINREQ message options    */
+    uint8_t        payload;                        /*!< JOINREQ message payload    */
 
 };
 
@@ -98,13 +93,13 @@ struct _joinreq
 /* JOINRESP message structure */
 struct _joinresp
 {
-    char           preamble[COMMS_PREAMBLE_LENTH];   /*!< Message PREAMBLE           */
-    comms_header_t fixed_header;                     /*!< Network header             */
-    char           source_mac[6];                    /*!< Source MAC address         */
-    char           destination_mac[6];               /*!< Destination MAC address    */
-    uint16_t       network_id;                       /*!< Network ID                 */
-    uint8_t        message_slot_number;              /*!< Device/Message slot number */
-    uint8_t        payload;                          /*!< JOINRESP message payload   */
+    char           preamble[NET_PREAMBLE_LENTH];   /*!< Message PREAMBLE           */
+    comms_header_t fixed_header;                   /*!< Network header             */
+    char           source_mac[NET_MAC_SIZE];       /*!< Source MAC address         */
+    char           destination_mac[NET_MAC_SIZE];  /*!< Destination MAC address    */
+    uint16_t       network_id;                     /*!< Network ID                 */
+    uint8_t        message_slot_number;            /*!< Device/Message slot number */
+    uint8_t        payload;                        /*!< JOINRESP message payload   */
 
 };
 
@@ -113,12 +108,12 @@ struct _joinresp
 /* STATUS message structure */
 struct _status
 {
-    char           preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
-    comms_header_t fixed_header;                    /*!< Network header             */
-    uint16_t       network_id;                      /*!< Network ID                 */
-    uint8_t        message_slot_number;             /*!< Device/Message slot number */
-    uint8_t        destination_client_id;           /*!< Destination Client ID      */
-    uint8_t        payload;                         /*!< status message payload     */
+    char           preamble[NET_PREAMBLE_LENTH];  /*!< Message preamble           */
+    comms_header_t fixed_header;                  /*!< Network header             */
+    uint16_t       network_id;                    /*!< Network ID                 */
+    uint8_t        message_slot_number;           /*!< Device/Message slot number */
+    uint8_t        destination_client_id;         /*!< Destination Client ID      */
+    uint8_t        payload;                       /*!< status message payload     */
 
 };
 
@@ -127,13 +122,27 @@ struct _status
 /* CONTRL message structure */
 struct _contrl
 {
-    char           preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
-    comms_header_t fixed_header;                    /*!< Network header             */
-    uint16_t       network_id;                      /*!< Network ID                 */
-    uint8_t        message_slot_number;             /*!< Device/Message slot number */
-    uint8_t        source_client_id;                /*!< Source Client ID           */
-    uint8_t        destination_client_id;           /*!< Destination Client ID      */
-    uint8_t        payload;                         /*!< CONTRL message payload     */
+    char           preamble[NET_PREAMBLE_LENTH];  /*!< Message preamble           */
+    comms_header_t fixed_header;                  /*!< Network header             */
+    uint16_t       network_id;                    /*!< Network ID                 */
+    uint8_t        message_slot_number;           /*!< Device/Message slot number */
+    uint8_t        source_client_id;              /*!< Source Client ID           */
+    uint8_t        destination_client_id;         /*!< Destination Client ID      */
+    uint8_t        payload;                       /*!< CONTRL message payload     */
+
+};
+
+
+
+/* Not tested */
+struct _statusack
+{
+    char           preamble[NET_PREAMBLE_LENTH]; /*!< */
+    comms_header_t fixed_header;                 /*!< */
+    uint16_t       network_id;                   /*!< */
+    uint8_t        message_slot_number;          /*!< */
+    uint8_t        destination_client_id;        /*!< */
+    char           payload[PAYLOAD_LENGTH];      /*!< */
 
 };
 
@@ -198,7 +207,6 @@ static int8_t comms_checksum(char *data, uint8_t offset, uint8_t size)
 /******************************************************************************/
 
 
-
 /********************************************************
  * @brief  Function to configure JOINREQ message options
  * @param  *client    : pointer to comms protocol handle
@@ -226,8 +234,6 @@ int8_t comms_joinreq_options(protocol_handle_t *client, uint8_t qos, uint8_t kee
 
     return func_retval;
 }
-
-
 
 
 /*******************************************************************
@@ -263,7 +269,7 @@ uint8_t comms_joinreq_message(protocol_handle_t *client, device_config_t device,
         client->joinrequest_msg->fixed_header.message_type = COMMS_JOINREQ_MESSAGE;
 
         /* Put mac address */
-        strncpy(client->joinrequest_msg->source_mac, device.device_mac, 6);
+        strncpy(client->joinrequest_msg->source_mac, device.device_mac, NET_MAC_SIZE);
 
         /* destination mac address (not defined)*/
 
@@ -302,7 +308,7 @@ uint8_t comms_joinreq_message(protocol_handle_t *client, device_config_t device,
         client->joinrequest_msg->fixed_header.message_length = JOINREQ_HEADER_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
 
         /* Total message Length */
-        message_length = client->joinrequest_msg->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
+        message_length = client->joinrequest_msg->fixed_header.message_length + NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
 
 
         /* Calculate checksum */
@@ -314,7 +320,6 @@ uint8_t comms_joinreq_message(protocol_handle_t *client, device_config_t device,
 
     return func_retval;
 }
-
 
 
 /******************************************************************************
@@ -343,7 +348,7 @@ int8_t comms_get_joinresp_data(device_config_t *device, protocol_handle_t client
         device->device_slot_number = 0;
 
         /* Check if JOINRESP message is intended for current device (MAC Address check) */
-        if(strncmp(device->device_mac, client.joinresponse_msg->destination_mac, 6) == 0)
+        if(strncmp(device->device_mac, client.joinresponse_msg->destination_mac, NET_MAC_SIZE) == 0)
         {
 
             message_status = client.joinresponse_msg->fixed_header.message_status;
@@ -390,36 +395,32 @@ int8_t comms_get_joinresp_data(device_config_t *device, protocol_handle_t client
 }
 
 
-
-
 /****************************************************************************************
  * @brief  Function to configure STATUS message
  * @param  *client         : pointer to the protocol handle
  * @param  device          : client device structure
  * @param  destination_id  : destination id of device to send the status message to
  * @param  payload_message : Message payload to be sent to the destination device
+ *
  * @retval uint8_t         : error 0, success: length of message
  ****************************************************************************************/
-uint8_t comms_status_message(protocol_handle_t *client, device_config_t device, uint8_t destination_id, const char *payload_message)
+uint8_t comms_status_message(protocol_handle_t *client, device_config_t device, uint8_t destination_id,
+                             const char *payload_message, uint16_t payload_length)
 {
     uint8_t func_retval    = 0;
     uint8_t message_length = 0;
-    uint8_t payload_length = 0;
     uint8_t payload_index  = 0;
 
     char *copy_payload;
 
-    /* Calculate  message length */
-    payload_length = strlen(payload_message);
-
-    /* Wrap payload message */
-    if(payload_length > COMMS_PAYLOAD_LENGTH)
+    /* Truncate PAYLOAD message */
+    if(payload_length > NET_DATA_LENGTH - COMMS_TERMINATOR_LENGTH)
     {
-        payload_length = COMMS_PAYLOAD_LENGTH - 2;
+        payload_length = NET_DATA_LENGTH - 2;
     }
 
     /* Handle parameter error */
-    if(client == NULL || payload_message == NULL || device.device_slot_number <= 3)
+    if(client == NULL || device.device_slot_number <= 3)
     {
         func_retval = 0;
     }
@@ -447,11 +448,10 @@ uint8_t comms_status_message(protocol_handle_t *client, device_config_t device, 
         strncpy(copy_payload + payload_index, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
 
         /* Calculate remaining message length */
-        client->status_msg->fixed_header.message_length = COMMS_NETWORK_ID_SIZE + COMMS_SLOTNUM_SIZE + COMMS_DESTINATION_DEVICEID_SIZE + payload_length + \
-                COMMS_TERMINATOR_LENGTH;
+        client->status_msg->fixed_header.message_length = STATUS_HEADER_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
 
         /* Total message length */
-        message_length = client->status_msg->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
+        message_length = client->status_msg->fixed_header.message_length + NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
 
         /* Get Checksum */
         client->status_msg->fixed_header.message_checksum = comms_checksum((char*)client->status_msg, 5, message_length);
@@ -463,8 +463,6 @@ uint8_t comms_status_message(protocol_handle_t *client, device_config_t device, 
 
     return func_retval;
 }
-
-
 
 
 /*****************************************************
@@ -490,8 +488,6 @@ int8_t comms_get_statusack(protocol_handle_t client, uint16_t network_id, uint8_
 
     return func_retval;
 }
-
-
 
 
 /*************************************************************************
@@ -547,8 +543,6 @@ int8_t comms_get_contrl_data(char *message_buffer, uint8_t* source_client_id, pr
 /******************************************************************************/
 
 
-
-
 /*******************************************************************
  * @brief  Function to set JOINRESP message status
  * @param  server       : reference to the protocol handle structure
@@ -586,7 +580,6 @@ int8_t comms_set_joinresp_message_status(protocol_handle_t *server, int8_t statu
 }
 
 
-
 /***********************************************************************************
  * @brief  Function to configure JOINRESP message
  * @param  *server         : reference to the protocol handle
@@ -619,8 +612,8 @@ uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device
         //server->joinresponse_msg->fixed_header.message_status = JOINRESP_ACK;
         server->joinresponse_msg->fixed_header.message_type   = COMMS_JOINRESP_MESSAGE;
 
-        memcpy(server->joinresponse_msg->source_mac,device_server.device_mac,6);
-        memcpy(server->joinresponse_msg->destination_mac,destination_mac,6);
+        memcpy(server->joinresponse_msg->source_mac, device_server.device_mac, NET_MAC_SIZE);
+        memcpy(server->joinresponse_msg->destination_mac, destination_mac, NET_MAC_SIZE);
 
         server->joinresponse_msg->network_id = device_server.device_network_id;
         server->joinresponse_msg->message_slot_number = COMMS_SERVER_SLOTNUM;
@@ -644,7 +637,7 @@ uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device
         server->joinresponse_msg->fixed_header.message_length = JOINRESP_HEADER_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
 
         /* Total message Length */
-        message_length = server->joinresponse_msg->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
+        message_length = server->joinresponse_msg->fixed_header.message_length + NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
 
         /* Calculate checksum */
         server->joinresponse_msg->fixed_header.message_checksum = comms_checksum((char*)server->joinresponse_msg, 5, message_length);
@@ -655,8 +648,6 @@ uint8_t comms_joinresp_message(protocol_handle_t *server, device_config_t device
 
     return func_retval;
 }
-
-
 
 
 /******************************************************************************************
@@ -690,7 +681,8 @@ int16_t comms_get_status_message(protocol_handle_t server, device_config_t serve
         /* Check network ID */
         if(server.status_msg->network_id == server_device.device_network_id)
         {
-            status_payload_length = strlen(status_data) - COMMS_TERMINATOR_LENGTH;
+            status_payload_length = abs(server.status_msg->fixed_header.message_length - \
+                                        (STATUS_HEADER_SIZE + COMMS_TERMINATOR_LENGTH));
 
             /* get source client id*/
             *source_client_id = server.status_msg->message_slot_number;
@@ -699,7 +691,7 @@ int16_t comms_get_status_message(protocol_handle_t server, device_config_t serve
             *destination_client_id = server.status_msg->destination_client_id;
 
             /* get payload data from client, get rid of the terminator */
-            strncpy(client_payload, status_data, status_payload_length);
+            memcpy(client_payload, status_data, status_payload_length);
 
             func_retval = status_payload_length;
         }
@@ -708,8 +700,6 @@ int16_t comms_get_status_message(protocol_handle_t server, device_config_t serve
 
     return func_retval;
 }
-
-
 
 
 /****************************************************************************************
@@ -785,7 +775,7 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
     server->contrl_msg->fixed_header.message_length = CONTRL_HEADER_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
 
     /* calculate total message length  */
-    message_length = server->contrl_msg->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
+    message_length = server->contrl_msg->fixed_header.message_length + NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
 
     /* Get Checksum */
     server->contrl_msg->fixed_header.message_checksum = comms_checksum((char*)server->contrl_msg, 5, message_length);
@@ -832,7 +822,7 @@ int8_t comms_get_joinreq_data(char *client_mac_address, uint8_t *client_requeste
             *client_requested_slots = strtol(joinreq_data, NULL, 10);
 
             /* Get client mac address */
-            memcpy(client_mac_address, server.joinrequest_msg->source_mac, COMMS_MACADDR_SIZE);
+            memcpy(client_mac_address, server.joinrequest_msg->source_mac, NET_MAC_SIZE);
 
             /* Can be used for as JOINRESP fsm state value */
             func_retval = 4;
@@ -888,11 +878,10 @@ int8_t comms_statusack_message(protocol_handle_t *client, device_config_t device
         strncpy(client->statusack_msg->payload, COMMS_MESSAGE_TERMINATOR, COMMS_TERMINATOR_LENGTH);
 
         /* Calculate remaining message length */
-        client->statusack_msg->fixed_header.message_length = COMMS_NETWORK_ID_SIZE + COMMS_SLOTNUM_SIZE + COMMS_DESTINATION_DEVICEID_SIZE + \
-                COMMS_TERMINATOR_LENGTH;
+        client->statusack_msg->fixed_header.message_length = STATUSACK_HEADER_SIZE + COMMS_TERMINATOR_LENGTH;
 
         /* Total message length */
-        message_length = client->statusack_msg->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
+        message_length = client->statusack_msg->fixed_header.message_length + NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
 
         /* Get Checksum */
         client->statusack_msg->fixed_header.message_checksum = comms_checksum((char*)client->statusack_msg, 5, message_length);
@@ -900,7 +889,6 @@ int8_t comms_statusack_message(protocol_handle_t *client, device_config_t device
         func_retval = message_length;
 
     }
-
 
     return func_retval;
 }

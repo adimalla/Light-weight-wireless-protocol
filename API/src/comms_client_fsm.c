@@ -86,15 +86,16 @@ typedef enum client_state_machine_values
  * @param  destination_id    : device id of the destination
  * @retval int8_t            : error = 0
  **************************************************************************/
-int8_t comms_start_client(access_control_t *wireless_network, device_config_t *client_device, comms_network_buffer_t *network_buffers, uint8_t destination_id)
+int8_t comms_start_client(access_control_t *wireless_network, device_config_t *client_device,
+                          comms_network_buffer_t *network_buffers, uint8_t destination_id)
 {
 
     int8_t func_retval = 1;
     protocol_handle_t  client;
 
-    char    sync_message_buff[20] = {0};
-    char    message_buffer[40]    = {0};
-    uint8_t message_length        = 0;
+    char    sync_message_buff[20]        = {0};
+    char    message_buffer[NET_MTU_SIZE] = {0};
+    uint8_t message_length               = 0;
 
     static uint8_t debug_print_count = 0;
 
@@ -119,7 +120,7 @@ int8_t comms_start_client(access_control_t *wireless_network, device_config_t *c
 
             fsm_state = DEV_SYNC;
 
-            if(network_buffers->application_data.network_join_request == 1)
+            if(network_buffers->application_flags.network_join_request == 1)
             {
                 /* Get data from read buffer */
                 wireless_network->sync_message = (void*)network_buffers->read_message;
@@ -149,7 +150,7 @@ int8_t comms_start_client(access_control_t *wireless_network, device_config_t *c
 
         /* Send JOINREQ Message until JOINRESP message is not received */
         if(network_buffers->flag_state == SYNC_FLAG && network_buffers->flag_state != JOINRESP_FLAG && \
-                network_buffers->application_data.network_join_request == 1)
+                network_buffers->application_flags.network_join_request == 1)
         {
 
             comms_send_status(wireless_network);
@@ -172,7 +173,7 @@ int8_t comms_start_client(access_control_t *wireless_network, device_config_t *c
 
 
 #if JOINREQ_ONCE
-            network_buffers->application_data.network_join_request = 0;
+            network_buffers->application_flags.network_join_request = 0;
 #endif
 
         }
@@ -194,13 +195,13 @@ int8_t comms_start_client(access_control_t *wireless_network, device_config_t *c
 
                 /* Set network flag as joined */
                 client_device->network_joined = 1;
-                network_buffers->application_data.network_joined_state = 1;
+                network_buffers->application_flags.network_joined_state = 1;
 
                 /* Calibrate new slot time */
                 comms_network_set_timer(wireless_network, client_device, NET_CLIENT_SLOT);
 
                 /* Reset join request flag */
-                network_buffers->application_data.network_join_request = 0;
+                network_buffers->application_flags.network_join_request = 0;
 
                 /* Change state to joined */
                 fsm_state = DEV_JOINED;
@@ -233,7 +234,7 @@ int8_t comms_start_client(access_control_t *wireless_network, device_config_t *c
 
 
         /* Send Status message when app message is ready */
-        if(network_buffers->flag_state == SYNC_FLAG && network_buffers->application_data.application_message_ready == 1 )
+        if(network_buffers->flag_state == SYNC_FLAG && network_buffers->application_flags.application_message_ready == 1 )
         {
             /* Send STATUS Message when application message is available */
             comms_send_status(wireless_network);
@@ -241,12 +242,13 @@ int8_t comms_start_client(access_control_t *wireless_network, device_config_t *c
             client.status_msg = (void*)message_buffer;
 
             /* Configure Status message */
-            message_length = comms_status_message(&client, *client_device, destination_id, network_buffers->application_message);
+            message_length = comms_status_message(&client, *client_device, destination_id,
+                                                  network_buffers->application_message, network_buffers->app_message_length);
 
             /* Send Status Message */
             comms_send(wireless_network, (char*)client.status_msg, message_length);
 
-            network_buffers->application_data.application_message_ready = 0;
+            network_buffers->application_flags.application_message_ready = 0;
 
             comms_status_debug_print(wireless_network, "STATUS",destination_id, network_buffers->application_message);
 
@@ -269,7 +271,7 @@ int8_t comms_start_client(access_control_t *wireless_network, device_config_t *c
 
             if(message_length)
             {
-                network_buffers->application_data.network_message_ready = 1;
+                network_buffers->application_flags.network_message_ready = 1;
 
                 comms_recv_status(wireless_network);
 

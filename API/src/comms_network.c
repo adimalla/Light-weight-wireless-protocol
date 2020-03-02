@@ -68,13 +68,13 @@
 /* Sync Message structure */
 struct _sync_packet
 {
-    char         preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble           */
-    net_header_t fixed_header;                    /*!< Network header             */
-    uint16_t     network_id;                      /*!< Network ID                 */
-    uint8_t      message_slot_number;             /*!< Message slot number        */
-    uint16_t     slot_time;                       /*!< Time interval of each slot */
-    uint8_t      access_slot;                     /*!< Server Access number       */
-    uint8_t      payload;                         /*!< Message payload            */
+    char         preamble[NET_PREAMBLE_LENTH];  /*!< Message preamble           */
+    net_header_t fixed_header;                  /*!< Network header             */
+    uint16_t     network_id;                    /*!< Network ID                 */
+    uint8_t      message_slot_number;           /*!< Message slot number        */
+    uint16_t     slot_time;                     /*!< Time interval of each slot */
+    uint8_t      access_slot;                   /*!< Server Access number       */
+    uint8_t      payload;                       /*!< Message payload            */
 };
 
 
@@ -242,14 +242,14 @@ static int8_t set_mac_address(char *device_mac, char *mac_address)
 
 
 /* Send/Receive function operations */
-__attribute__((weak)) int8_t send_message(char *message_buffer, uint8_t length)
+__attribute__((weak)) int8_t send_message(char *message_buffer, uint16_t length)
 {
 
     return 0;
 }
 
 
-__attribute__((weak)) int8_t recv_message(char *message_buffer, uint8_t length)
+__attribute__((weak)) int8_t recv_message(char *message_buffer, uint16_t length)
 {
 
     return 0;
@@ -334,7 +334,7 @@ __attribute__((weak)) int8_t clear_status(void)
 
 /* Network debug print operations */
 
-__attribute__((weak)) int8_t debug_print_joinreq(char *debug_message)
+__attribute__((weak)) int8_t network_debug_print(char *debug_message)
 {
 
     return 0;
@@ -441,20 +441,8 @@ access_control_t* create_network_handle(network_operations_t *network_ops)
 #if DEBUG_OPERATIONS
 
     /* Set network debug operations */
-    if(network_ops->debug_print_joinreq == NULL)
-        network_ops->debug_print_joinreq = debug_print_joinreq;
-
-    if(network_ops->debug_print_joinresp == NULL)
-        network_ops->debug_print_joinresp = debug_print_joinresp;
-
-    if(network_ops->debug_print_status == NULL)
-        network_ops->debug_print_status = debug_print_status;
-
-    if(network_ops->debug_print_contrl == NULL)
-        network_ops->debug_print_contrl = debug_print_contrl;
-
-    if(network_ops->debug_print_statusack == NULL)
-        network_ops->debug_print_statusack = debug_print_statusack;
+    if(network_ops->net_debug_print == NULL)
+        network_ops->net_debug_print = network_debug_print;
 
 #endif
 
@@ -544,7 +532,7 @@ device_config_t* create_client_device(char *mac_address, uint8_t requested_total
  * @param  message_length   : message_length
  * @retval int8_t           : error: -1, success: length of message
  ***********************************************************************/
-int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t message_length)
+int8_t comms_send(access_control_t *network, char *message_buffer, uint16_t message_length)
 {
     int8_t  func_retval   = 0;
     int8_t  send_retval   = 0;
@@ -624,7 +612,7 @@ int8_t comms_server_recv_it(access_control_t *network,comms_network_buffer_t *re
                 /* Copy data to read buffer  */
                 memset(recv_buffer->read_message, 0, sizeof(recv_buffer->read_message));
                 memcpy(recv_buffer->read_message, recv_buffer->receive_message, network->packet_type->fixed_header.message_length + \
-                       COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
+                       NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
 
             }
         }
@@ -656,7 +644,7 @@ int8_t comms_server_recv_it(access_control_t *network,comms_network_buffer_t *re
  * @param  *read_index      : index of buffer loop
  * @retval int8_t           : error: -2, success: length of message
  ************************************************************************/
-int8_t comms_client_recv_it(access_control_t *network,comms_network_buffer_t *recv_buffer, uint8_t *read_index)
+int8_t comms_client_recv_it(access_control_t *network, comms_network_buffer_t *recv_buffer, uint8_t *read_index)
 {
     int8_t func_retval =  0;
 
@@ -694,7 +682,7 @@ int8_t comms_client_recv_it(access_control_t *network,comms_network_buffer_t *re
                 /* Copy data to read buffer  */
                 memset(recv_buffer->read_message, 0, sizeof(recv_buffer->read_message));
                 memcpy(recv_buffer->read_message, recv_buffer->receive_message, network->packet_type->fixed_header.message_length + \
-                       COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
+                       NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
 
                 break;
 
@@ -705,7 +693,7 @@ int8_t comms_client_recv_it(access_control_t *network,comms_network_buffer_t *re
                 /* Copy data to read buffer  */
                 memset(recv_buffer->read_message, 0, sizeof(recv_buffer->read_message));
                 memcpy(recv_buffer->read_message, recv_buffer->receive_message, network->packet_type->fixed_header.message_length + \
-                       COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
+                       NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
 
 
                 break;
@@ -717,7 +705,7 @@ int8_t comms_client_recv_it(access_control_t *network,comms_network_buffer_t *re
                 /* Copy data to read buffer  */
                 memset(recv_buffer->read_message, 0, sizeof(recv_buffer->read_message));
                 memcpy(recv_buffer->read_message, recv_buffer->receive_message, network->packet_type->fixed_header.message_length + \
-                       COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
+                       NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
 
                 break;
 
@@ -740,6 +728,49 @@ int8_t comms_client_recv_it(access_control_t *network,comms_network_buffer_t *re
 
     return func_retval;
 }
+
+
+
+
+
+
+/*******************************************************************
+ * @brief  Function to send application message.
+ * @param  *network         : reference to network buffer structure
+ * @param  *message_buffer  : user message
+ * @param  message_length   : message length
+ * @retval int8_t           : error: -2, success: length of message
+ *******************************************************************/
+int8_t send_application_message(comms_network_buffer_t *network_buffer, char *user_message, uint16_t message_length)
+{
+    int8_t func_retval = 0;
+
+    if(network_buffer->application_flags.network_joined_state == 0)
+    {
+        func_retval = 0;
+    }
+    else if(message_length >= NET_DATA_LENGTH - COMMS_TERMINATOR_LENGTH)
+    {
+        func_retval = -1;
+    }
+    else
+    {
+        memset(network_buffer->application_message, 0, NET_DATA_LENGTH);
+        memcpy(network_buffer->application_message, user_message, message_length);
+
+        network_buffer->app_message_length = message_length;
+
+        network_buffer->application_flags.application_message_ready = 1;
+
+        func_retval = 1;
+    }
+
+    return func_retval;
+}
+
+
+
+
 
 
 
@@ -876,9 +907,11 @@ int8_t comms_sync_status(access_control_t *network)
     }
     else
     {
+#if ACTIVITY_OPERATIONS
         network->network_commands->sync_activity_status();
 
         func_retval = 0;
+#endif
     }
 
     return func_retval;
@@ -902,9 +935,11 @@ int8_t comms_send_status(access_control_t *network)
     }
     else
     {
+#if ACTIVITY_OPERATIONS
         network->network_commands->send_activity_status();
 
         func_retval = 0;
+#endif
     }
 
     return func_retval;
@@ -927,9 +962,11 @@ int8_t comms_recv_status(access_control_t *network)
     }
     else
     {
+#if ACTIVITY_OPERATIONS
         network->network_commands->recv_activity_status();
 
         func_retval = 0;
+#endif
     }
 
     return func_retval;
@@ -952,9 +989,11 @@ int8_t comms_clear_activity(access_control_t *network)
     }
     else
     {
+#if ACTIVITY_OPERATIONS
         network->network_commands->clear_status();
 
         func_retval = 0;
+#endif
     }
 
     return func_retval;
@@ -979,9 +1018,11 @@ int8_t comms_net_connected_status(access_control_t *network)
     }
     else
     {
+#if ACTIVITY_OPERATIONS
         network->network_commands->net_connected_status();
 
         func_retval = 0;
+#endif
     }
 
     return func_retval;
@@ -1019,15 +1060,15 @@ int8_t comms_joinreq_debug_print(access_control_t *network, char *debug_message,
 
         api_ltoa((long)requested_slots, requested_slots_ch, 1);
 
-        network->network_commands->debug_print_joinreq(debug_message);
+        network->network_commands->net_debug_print(debug_message);
 
-        network->network_commands->debug_print_joinreq(" ");
+        network->network_commands->net_debug_print(" ");
 
-        network->network_commands->debug_print_joinreq("(SL:");
-        network->network_commands->debug_print_joinreq(requested_slots_ch);
-        network->network_commands->debug_print_joinreq(")");
+        network->network_commands->net_debug_print("(SL:");
+        network->network_commands->net_debug_print(requested_slots_ch);
+        network->network_commands->net_debug_print(")");
 
-        network->network_commands->debug_print_joinreq("\r\n");
+        network->network_commands->net_debug_print("\r\n");
 
     }
 
@@ -1059,15 +1100,15 @@ int8_t comms_joinresp_debug_print(access_control_t *network, char *debug_message
 
         api_ltoa(received_slot_id, received_slot_id_ch, 1);
 
-        network->network_commands->debug_print_joinresp(debug_message);
+        network->network_commands->net_debug_print(debug_message);
 
-        network->network_commands->debug_print_joinresp(" ");
+        network->network_commands->net_debug_print(" ");
 
-        network->network_commands->debug_print_joinresp("(ID:");
-        network->network_commands->debug_print_joinresp(received_slot_id_ch);
-        network->network_commands->debug_print_joinresp(")");
+        network->network_commands->net_debug_print("(ID:");
+        network->network_commands->net_debug_print(received_slot_id_ch);
+        network->network_commands->net_debug_print(")");
 
-        network->network_commands->debug_print_joinresp("\r\n");
+        network->network_commands->net_debug_print("\r\n");
 
     }
 
@@ -1103,30 +1144,30 @@ int8_t comms_status_debug_print(access_control_t *network, char *debug_message, 
     {
         api_ltoa(destination_id, ltoa_buffer, 1);
 
-        network->network_commands->debug_print_status(debug_message);
+        network->network_commands->net_debug_print(debug_message);
 
-        network->network_commands->debug_print_status(" ");
+        network->network_commands->net_debug_print(" ");
 
-        network->network_commands->debug_print_status("(DID:");
-        network->network_commands->debug_print_status(ltoa_buffer);
+        network->network_commands->net_debug_print("(DID:");
+        network->network_commands->net_debug_print(ltoa_buffer);
 
-        network->network_commands->debug_print_status(" ");
+        network->network_commands->net_debug_print(" ");
 
-        network->network_commands->debug_print_status("LEN:");
+        network->network_commands->net_debug_print("LEN:");
 
         memset(ltoa_buffer, 0, sizeof(ltoa_buffer));
 
         api_ltoa(payload_length, ltoa_buffer, 1);
 
-        network->network_commands->debug_print_status(ltoa_buffer);
-        network->network_commands->debug_print_status(")");
+        network->network_commands->net_debug_print(ltoa_buffer);
+        network->network_commands->net_debug_print(")");
 
-        network->network_commands->debug_print_status(" ");
+        network->network_commands->net_debug_print(" ");
 
-        network->network_commands->debug_print_status("DATA: ");
-        network->network_commands->debug_print_status(payload_data);
+        network->network_commands->net_debug_print("DATA: ");
+        network->network_commands->net_debug_print(payload_data);
 
-        network->network_commands->debug_print_status("\r\n");
+        network->network_commands->net_debug_print("\r\n");
 
     }
 
@@ -1162,30 +1203,30 @@ int8_t comms_contrl_debug_print(access_control_t *network, char *debug_message, 
     {
         api_ltoa(source_id, ltoa_buffer, 1);
 
-        network->network_commands->debug_print_contrl(debug_message);
+        network->network_commands->net_debug_print(debug_message);
 
-        network->network_commands->debug_print_contrl(" ");
+        network->network_commands->net_debug_print(" ");
 
-        network->network_commands->debug_print_contrl("(SID:");
-        network->network_commands->debug_print_contrl(ltoa_buffer);
+        network->network_commands->net_debug_print("(SID:");
+        network->network_commands->net_debug_print(ltoa_buffer);
 
-        network->network_commands->debug_print_contrl(" ");
+        network->network_commands->net_debug_print(" ");
 
-        network->network_commands->debug_print_contrl("LEN:");
+        network->network_commands->net_debug_print("LEN:");
 
         memset(ltoa_buffer, 0, sizeof(ltoa_buffer));
 
         api_ltoa(payload_length, ltoa_buffer, 1);
 
-        network->network_commands->debug_print_contrl(ltoa_buffer);
-        network->network_commands->debug_print_contrl(")");
+        network->network_commands->net_debug_print(ltoa_buffer);
+        network->network_commands->net_debug_print(")");
 
-        network->network_commands->debug_print_contrl(" ");
+        network->network_commands->net_debug_print(" ");
 
-        network->network_commands->debug_print_contrl("DATA: ");
-        network->network_commands->debug_print_contrl(payload_data);
+        network->network_commands->net_debug_print("DATA: ");
+        network->network_commands->net_debug_print(payload_data);
 
-        network->network_commands->debug_print_contrl("\r\n");
+        network->network_commands->net_debug_print("\r\n");
 
     }
 
@@ -1275,7 +1316,7 @@ uint8_t comms_network_sync_message(access_control_t *network, uint16_t network_i
     else
     {
         /* check length error */
-        if(payload_length > COMMS_PAYLOAD_LENGTH - COMMS_TERMINATOR_LENGTH )
+        if(payload_length > NET_DATA_LENGTH - COMMS_TERMINATOR_LENGTH )
         {
             func_retval = 0;
         }
@@ -1307,7 +1348,7 @@ uint8_t comms_network_sync_message(access_control_t *network, uint16_t network_i
             /* Calculate remaining length */
             network->sync_message->fixed_header.message_length = SYNC_HEADER_SIZE + payload_length + COMMS_TERMINATOR_LENGTH;
 
-            message_length = network->sync_message->fixed_header.message_length + COMMS_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
+            message_length = network->sync_message->fixed_header.message_length + NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH;
 
             /* Calculate checksum Length of fixed header + PREAMBLE = 5 */
             network->sync_message->fixed_header.message_checksum = comms_network_checksum((char*)network->sync_message, 5 , message_length);

@@ -113,19 +113,17 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
     protocol_handle_t server;
 
-    char    send_message_buffer[COMMS_MESSAGE_LENGTH] = {0};
+    char    send_message_buffer[NET_MTU_SIZE]          = {0};
+    char    client_mac_address[NET_MAC_SIZE]           = {0};
+    char    destination_mac_addr[NET_DATA_LENGTH]      = {0};
+    static char status_message_buffer[NET_DATA_LENGTH] = {0};
 
-    uint8_t client_requested_slots                    = 0;
-    char    client_mac_address[COMMS_MACADDR_SIZE]    = {0};
-
-    char    destination_mac_addr[COMMS_MACADDR_SIZE]  = {0};
-
-    uint8_t message_length = 0;
+    uint8_t client_requested_slots           = 0;
+    uint8_t message_length                   = 0;
 
     static int8_t  client_id                 = 0;    /*!< from device table   */
     static uint8_t destination_client_id     = 0;    /*!< from status message */
     static uint8_t source_client_id          = 0;
-    static char    status_message_buffer[20] = {0};
     static int16_t status_message_length     = 0;
 
     static int8_t device_found = 0;
@@ -204,14 +202,14 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         server.joinrequest_msg = (void*)network_buffers->read_message;
 
         api_retval = comms_get_joinreq_data(client_mac_address, &client_requested_slots, server,
-                                            *server_device, network_buffers->application_data.network_join_response);
+                                            *server_device, network_buffers->application_flags.network_join_response);
 
         if(api_retval)
         {
 
             table_values = update_server_device_table(client_devices, client_mac_address, client_requested_slots, server_device);
 
-            network_buffers->application_data.network_join_response = 0;
+            network_buffers->application_flags.network_join_response = 0;
 
             switch(server_mode)
             {
@@ -228,7 +226,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
             case WI_GATEWAY_SERVER:
 
                 /* Set network message flag read and network message in gateway mode */
-                network_buffers->application_data.network_message_ready = 1;
+                network_buffers->application_flags.network_message_ready = 1;
 
                 break;
 
@@ -237,7 +235,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         }
         else
         {
-            network_buffers->application_data.network_join_response = 0;
+            network_buffers->application_flags.network_join_response = 0;
 
             fsm_state = SYNC_STATE;
         }
@@ -324,7 +322,6 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
             }
 
-
         }
         else
         {
@@ -382,6 +379,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         device_found          = 0;
         source_client_id      = 0;
         destination_client_id = 0;
+
         memset(status_message_buffer, 0, sizeof(status_message_buffer));
 
         fsm_state = SYNC_STATE;

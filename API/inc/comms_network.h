@@ -77,14 +77,14 @@
 /* Network Device Configuration Structure for Server and Client */
 typedef struct _device_config
 {
-    char      device_mac[COMMS_MACADDR_SIZE];  /*!< Device Mac Address, user defined                                     */
-    uint16_t  device_network_id;               /*!< Device Network ID, user defined                                      */
-    uint8_t   network_access_slot;             /*!< Device Access Slot number, configs header file defined               */
-    uint8_t   device_slot_number;              /*!< Device Slot Number, user defined                                     */
-    uint16_t  device_slot_time;                /*!< Time of each slot interval, user defined                             */
-    uint8_t   total_slots;                     /*!< Total number of slots, user defined, changes in server on runtime    */
-    uint8_t   network_joined;                  /*!< Network Joined State, changed by client on runtime                   */
-    uint8_t   device_count;                    /*!< Current number of device connected to the server, changes on runtime */
+    char      device_mac[NET_MAC_SIZE];  /*!< Device Mac Address, user defined                                     */
+    uint16_t  device_network_id;         /*!< Device Network ID, user defined                                      */
+    uint8_t   network_access_slot;       /*!< Device Access Slot number, configs header file defined               */
+    uint8_t   device_slot_number;        /*!< Device Slot Number, user defined                                     */
+    uint16_t  device_slot_time;          /*!< Time of each slot interval, user defined                             */
+    uint8_t   total_slots;               /*!< Total number of slots, user defined, changes in server on runtime    */
+    uint8_t   network_joined;            /*!< Network Joined State, changed by client on runtime                   */
+    uint8_t   device_count;              /*!< Current number of device connected to the server, changes on runtime */
 
 }device_config_t;
 
@@ -133,14 +133,15 @@ typedef struct _application_flags
 /* Network buffer structure for message passing between network and user applications */
 typedef struct _comms_network_buffer
 {
-    app_flags_t     application_data;                           /*!< Application flag state structure                          */
-    char            receive_message[COMMS_MESSAGE_LENGTH];      /*!< Receive message buffer all messages                       */
-    char            read_message[COMMS_MESSAGE_LENGTH];         /*!< Read message buffer for valid messages, filled by network */
-    char            application_message[COMMS_MESSAGE_LENGTH];  /*!< Application message buffer, filled by application         */
-    char            network_message[COMMS_MESSAGE_LENGTH];      /*!< Network message buffer, filled by network                 */
-    message_flags_t flag_state;                                 /*!< Network message flag states                               */
-    uint8_t         source_id;                                  /*!< Network message source ID                                 */
-    uint8_t         destination_id;                             /*!< Network Message destination ID                            */
+    app_flags_t     application_flags;                     /*!< Application flag state structure                          */
+    char            receive_message[NET_DATA_LENGTH];      /*!< Receive message buffer all messages                       */
+    char            read_message[NET_DATA_LENGTH];         /*!< Read message buffer for valid messages, filled by network */
+    char            application_message[NET_DATA_LENGTH];  /*!< Application message buffer, filled by application         */
+    char            network_message[NET_DATA_LENGTH];      /*!< Network message buffer, filled by network                 */
+    uint16_t        app_message_length;                    /*!< */
+    message_flags_t flag_state;                            /*!< Network message flag states                               */
+    uint8_t         source_id;                             /*!< Network message source ID                                 */
+    uint8_t         destination_id;                        /*!< Network Message destination ID                            */
 
 }comms_network_buffer_t;
 
@@ -150,8 +151,8 @@ typedef struct _comms_network_buffer
 typedef struct _network_operations
 {
     /* Send/Receive function operations */
-    int8_t (*send_message)(char *message_buffer, uint8_t message_length);           /*!< Send function               */
-    int8_t (*recv_message)(char *message_buffer, uint8_t message_length);           /*!< Receive function            */
+    int8_t (*send_message)(char *message_buffer, uint16_t message_length);          /*!< Send function               */
+    int8_t (*recv_message)(char *message_buffer, uint16_t message_length);          /*!< Receive function            */
 
     /* Transmit timer and receive interrupt operations */
     int8_t (*set_tx_timer)(uint16_t device_slot_time, uint8_t device_slot_number);  /*!< Set transmit timer function */
@@ -173,11 +174,8 @@ typedef struct _network_operations
 
 #if DEBUG_OPERATIONS
     /* Network debug operations */
-    int8_t (*debug_print_joinreq)(char *debug_message);                             /*!< */
-    int8_t (*debug_print_joinresp)(char *debug_message);                            /*!< */
-    int8_t (*debug_print_status)(char *debug_message);                              /*!< */
-    int8_t (*debug_print_contrl)(char *debug_message);                              /*!< */
-    int8_t (*debug_print_statusack)(char *debug_message);                           /*!< */
+    int8_t (*net_debug_print)(char *debug_message);                                /*!< Network debug print          */
+
 #endif
 
 }network_operations_t;
@@ -197,8 +195,8 @@ typedef struct _wi_network_header
 /* Network message structure */
 struct _network_message
 {
-    char         preamble[COMMS_PREAMBLE_LENTH];  /*!< Message preamble */
-    net_header_t fixed_header;                    /*!< Network Header   */
+    char         preamble[NET_PREAMBLE_LENTH];  /*!< Message preamble */
+    net_header_t fixed_header;                  /*!< Network Header   */
 
 };
 
@@ -229,15 +227,12 @@ typedef struct _access_control
 /******************************************************************************/
 
 
-
 /**************************************************************************************
  * @brief  Constructor function to create network access handle object
  * @param  *network_operations_t : reference to network operations handle
  * @retval access_control_t      : error: NULL, success: address of the created object
  **************************************************************************************/
 access_control_t* create_network_handle(network_operations_t *network_ops);
-
-
 
 
 /**************************************************************************************
@@ -248,8 +243,8 @@ access_control_t* create_network_handle(network_operations_t *network_ops);
  * @param  total_slots           : no of existing slots at start
  * @retval device_config_t       : error: NULL, success: address of the created object
  **************************************************************************************/
-device_config_t* create_server_device(char *mac_address, uint16_t network_id, uint16_t device_slot_time, uint8_t total_slots);
-
+device_config_t* create_server_device(char *mac_address, uint16_t network_id, uint16_t device_slot_time,
+                                      uint8_t total_slots);
 
 
 /**************************************************************************************
@@ -261,7 +256,6 @@ device_config_t* create_server_device(char *mac_address, uint16_t network_id, ui
 device_config_t* create_client_device(char *mac_address, uint8_t requested_total_slots);
 
 
-
 /*******************************************************************
  * @brief  Function to send sync message through network hardware
  * @param  *network         : reference to network handle structure
@@ -269,20 +263,7 @@ device_config_t* create_client_device(char *mac_address, uint8_t requested_total
  * @param  message_length   : message_length
  * @retval int8_t           : error: -1, success: length of message
  *******************************************************************/
-int8_t comms_send(access_control_t *network, char *message_buffer, uint8_t message_length);
-
-
-
-
-/************************************************************************
- * @brief  Function to receive message through network hardware interrupt
- * @param  *network         : reference to network handle structure
- * @param  *message_buffer  : message buffer to be send
- * @param  *read_index      : index of buffer loop
- * @retval int8_t           : error: -2, success: length of message
- ************************************************************************/
-int8_t comms_server_recv_it(access_control_t *network,comms_network_buffer_t *recv_buffer, uint8_t *read_index);
-
+int8_t comms_send(access_control_t *network, char *message_buffer, uint16_t message_length);
 
 
 /************************************************************************
@@ -292,8 +273,27 @@ int8_t comms_server_recv_it(access_control_t *network,comms_network_buffer_t *re
  * @param  *read_index      : index of buffer loop
  * @retval int8_t           : error: -2, success: length of message
  ************************************************************************/
-int8_t comms_client_recv_it(access_control_t *network,comms_network_buffer_t *recv_buffer, uint8_t *read_index);
+int8_t comms_server_recv_it(access_control_t *network, comms_network_buffer_t *recv_buffer, uint8_t *read_index);
 
+
+/************************************************************************
+ * @brief  Function to receive message through network hardware interrupt
+ * @param  *network         : reference to network handle structure
+ * @param  *message_buffer  : message buffer to be send
+ * @param  *read_index      : index of buffer loop
+ * @retval int8_t           : error: -2, success: length of message
+ ************************************************************************/
+int8_t comms_client_recv_it(access_control_t *network, comms_network_buffer_t *recv_buffer, uint8_t *read_index);
+
+
+/*******************************************************************
+ * @brief  Function to send application message.
+ * @param  *network         : reference to network buffer structure
+ * @param  *message_buffer  : user message
+ * @param  message_length   : message length
+ * @retval int8_t           : error: -2, success: length of message
+ *******************************************************************/
+int8_t send_application_message(comms_network_buffer_t *network_buffer, char *user_message, uint16_t message_length);
 
 
 /*********************************************************************
@@ -306,7 +306,6 @@ int8_t comms_client_recv_it(access_control_t *network,comms_network_buffer_t *re
 int8_t comms_network_set_timer(access_control_t *network, device_config_t *device, network_slot_t slot_type);
 
 
-
 /*********************************************************
  * @brief  Function to calculate network message checksum
  * @param  data   : message data
@@ -315,8 +314,6 @@ int8_t comms_network_set_timer(access_control_t *network, device_config_t *devic
  * @retval int8_t : checksum
  *********************************************************/
 int8_t comms_network_checksum(char *data, uint8_t offset, uint8_t size);
-
-
 
 
 
@@ -417,7 +414,8 @@ int8_t comms_joinresp_debug_print(access_control_t *network, char *debug_message
  * @param  payload_data         : payload message
  * @retval int8_t               : error = -16, success = 0
  ***********************************************************************/
-int8_t comms_status_debug_print(access_control_t *network, char *debug_message, uint8_t destination_id, char *payload_data);
+int8_t comms_status_debug_print(access_control_t *network, char *debug_message, uint8_t destination_id,
+                                char *payload_data);
 
 
 
@@ -431,7 +429,8 @@ int8_t comms_status_debug_print(access_control_t *network, char *debug_message, 
  * @param  payload_data    : payload message
  * @retval int8_t          : error = -16, success = 0
  *******************************************************************/
-int8_t comms_contrl_debug_print(access_control_t *network, char *debug_message, uint8_t source_id, char *payload_data);
+int8_t comms_contrl_debug_print(access_control_t *network, char *debug_message, uint8_t source_id,
+                                char *payload_data);
 
 
 
