@@ -27,7 +27,7 @@
 /*                                                                            */
 /******************************************************************************/
 
-#define SLOT_TIME_MS      5
+#define SLOT_TIME_MS      6
 #define STARTING_SLOTS    3
 
 
