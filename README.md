@@ -1,6 +1,8 @@
-# Light-weight-wireless-protocol (Pending docs)
+# Light-weight-wireless-protocol
 
-#### Light weight wireless messaging protocol for low power sensor networks based on slotted aloha access method.
+#### (Updating docs) Light weight wireless messaging protocol for low power sensor networks based on slotted aloha access method.
+
+**_Please take Prior Persmisson from Dr Jason.Losh and respective ownwers if you wish to use it in your Academic Project at The University of Texas at Arlington._**
 
 ## Info
 This is a custom low bandwidth, low overhead light weight wireless protocol developed as a part of EE6314 project course work.
@@ -16,7 +18,7 @@ The Protocol is based on an API framework which gives it protablibity to interfa
 
 ## Description.
 
-#### Wireless Protocol Flow Diagram
+### Wireless Protocol Flow Diagram
 
 <img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_336.jpg" width="800" height="800" title="CLI">
 <br/>
