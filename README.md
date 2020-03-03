@@ -3,7 +3,7 @@
 #### (Updating docs) Light weight wireless messaging protocol for low power sensor networks based on slotted aloha access method.
 
 **_Copyright (c) Aditya Mall, 2020_**
-###### Please take Prior Persmisson from Dr Jason.Losh and respective owners if you wish to use it in your Academic Project at The University of Texas at Arlington.
+###### Please take prior permisson from Dr Jason.Losh and respective owners if you wish to use it in your Academic Project, if you happen to be a student at The University of Texas at Arlington.
 
 ## Info
 This is a custom low bandwidth, low overhead light weight wireless protocol developed as a part of EE6314 project course work.
@@ -36,7 +36,7 @@ The Protocol is based on an API framework which gives it protablibity to interfa
 <img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_338.jpg" width="800" height="800" title="Connection Iniation">
 
 #### Data Communication Diagram
-<img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_339.jpg" width="900" height="900" title="Connection Iniation">
+<img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_339.jpg" width="900" height="900" title="Communication Diagram">
 
 
 ## Contact
