@@ -21,7 +21,7 @@ The Protocol is based on an API framework which gives it protablibity to interfa
 
 ### Wireless Protocol Flow Diagram
 
-<img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_337.jpg" width="900" height="800" title="CLI">
+<img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_337.jpg" width="900" height="800" title="Layer Architecture">
 
 ### Protocol Messages
 1. SYNC Message (Synchronization Message, Broadcast Message send by the sever to synchronize client timers and give network
@@ -33,7 +33,10 @@ The Protocol is based on an API framework which gives it protablibity to interfa
 6. STATACK Message (Status Acknowledgment message, Send by the server ins response to satus message, if quality of service is configured)
 
 #### Connection Initiation Diagram
-<img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_338.jpg" width="800" height="800" title="CLI">
+<img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_338.jpg" width="800" height="800" title="Connection Iniation">
+
+#### Data Communication Diagram
+<img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_339.jpg" width="900" height="900" title="Connection Iniation">
 
 
 ## Contact
