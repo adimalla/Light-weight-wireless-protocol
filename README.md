@@ -24,6 +24,11 @@ The Protocol is based on an API framework which gives it protablibity to interfa
 <img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_336.jpg" width="800" height="800" title="CLI">
 <br/>
 
+##### The Protocol Framework Consists of three parts :-
+1 Pre implemented Server and Client State Machines
+2 Network and Protocol Layer if users want to develop their own state machine
+3 Network operations 
+
 
 ## Contact
 For further queries please contact :- </br>
