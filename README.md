@@ -32,7 +32,7 @@ The Protocol is based on an API framework which gives it protablibity to interfa
 5. CONTRL Message (Control Message, send by the server in response to status message, to the destination device)
 6. STATACK Message (Status Acknowledgment message, Send by the server ins response to satus message, if quality of service is configured)
 
-#### Protocol Commuication Diagram
+#### Connection Initiation Diagram
 <img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_338.jpg" width="800" height="800" title="CLI">
 
 
