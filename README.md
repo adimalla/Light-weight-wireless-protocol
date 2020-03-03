@@ -2,7 +2,7 @@
 
 #### (Updating docs) Light weight wireless messaging protocol for low power sensor networks based on slotted aloha access method.
 
-**_Please take Prior Persmisson from Dr Jason.Losh and respective ownwers if you wish to use it in your Academic Project at The University of Texas at Arlington._**
+###### Please take Prior Persmisson from Dr Jason.Losh and respective ownwers if you wish to use it in your Academic Project at The University of Texas at Arlington
 
 ## Info
 This is a custom low bandwidth, low overhead light weight wireless protocol developed as a part of EE6314 project course work.
