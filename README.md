@@ -2,6 +2,7 @@
 
 #### (Updating docs) Light weight wireless messaging protocol for low power sensor networks based on slotted aloha access method.
 
+**_Copyright (c) Aditya Mall, 2020_**
 ###### Please take Prior Persmisson from Dr Jason.Losh and respective ownwers if you wish to use it in your Academic Project at The University of Texas at Arlington
 
 ## Info
