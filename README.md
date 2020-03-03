@@ -22,8 +22,6 @@ The Protocol is based on an API framework which gives it protablibity to interfa
 ### Wireless Protocol Flow Diagram
 
 <img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_337.jpg" width="900" height="800" title="CLI">
-<br/>
-
 ##### The Protocol Framework Consists of three parts :-
 1. Pre implemented Server and Client State Machines
 2. Network and Protocol Layer if users want to develop their own state machine
