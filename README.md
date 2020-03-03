@@ -1,6 +1,6 @@
 # Light-weight-wireless-protocol
 
-#### (Updating docs) Light weight wireless messaging protocol for low power sensor networks based on slotted aloha access method.
+#### Light weight wireless messaging protocol for low power sensor networks based on slotted aloha access method.
 
 **_Copyright (c) Aditya Mall, 2020_**
 ###### Please take prior permisson from Dr Jason.Losh and respective owners if you wish to use it in your Academic Project, if you happen to be a student at The University of Texas at Arlington.
