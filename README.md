@@ -29,7 +29,7 @@ The Protocol is based on an API framework which gives it protablibity to interfa
 2. JOINRESP Message (Join Response Message, send by the Server to the client)
 3. STATUS Message (Status Message, send by the client to the server)
 4. CONTRL Message (Control Message, send by the server in response to status message, to the destination device)
-5. STASUACK Message (Status Acknowledgment message, Send by the server ins response to satus message, if quality of service is configured)
+5. STATACK Message (Status Acknowledgment message, Send by the server ins response to satus message, if quality of service is configured)
 
 #### Protocol Commuication Diagram
 
