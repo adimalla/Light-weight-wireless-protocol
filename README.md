@@ -24,12 +24,13 @@ The Protocol is based on an API framework which gives it protablibity to interfa
 <img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_337.jpg" width="900" height="800" title="CLI">
 
 ### Protocol Messages
-
-1. JOINREQ Message (Join Request Message, send by the client to the server)
-2. JOINRESP Message (Join Response Message, send by the Server to the client)
-3. STATUS Message (Status Message, send by the client to the server)
-4. CONTRL Message (Control Message, send by the server in response to status message, to the destination device)
-5. STATACK Message (Status Acknowledgment message, Send by the server ins response to satus message, if quality of service is configured)
+1. SYNC Message (Synchronization Message, Broadcast Message send by the sever to synchronize client timers and give network
+                 information)
+2. JOINREQ Message (Join Request Message, send by the client to the server)
+3. JOINRESP Message (Join Response Message, send by the Server to the client)
+4. STATUS Message (Status Message, send by the client to the server)
+5. CONTRL Message (Control Message, send by the server in response to status message, to the destination device)
+6. STATACK Message (Status Acknowledgment message, Send by the server ins response to satus message, if quality of service is configured)
 
 #### Protocol Commuication Diagram
 
