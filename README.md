@@ -3,7 +3,7 @@
 #### (Updating docs) Light weight wireless messaging protocol for low power sensor networks based on slotted aloha access method.
 
 **_Copyright (c) Aditya Mall, 2020_**
-###### Please take Prior Persmisson from Dr Jason.Losh and respective ownwers if you wish to use it in your Academic Project at The University of Texas at Arlington
+###### Please take Prior Persmisson from Dr Jason.Losh and respective owners if you wish to use it in your Academic Project at The University of Texas at Arlington.
 
 ## Info
 This is a custom low bandwidth, low overhead light weight wireless protocol developed as a part of EE6314 project course work.
@@ -30,6 +30,9 @@ The Protocol is based on an API framework which gives it protablibity to interfa
 3. STATUS Message (Status Message, send by the client to the server)
 4. CONTRL Message (Control Message, send by the server in response to status message, to the destination device)
 5. STASUACK Message (Status Message Acknowledgment message, if quality of service is configured)
+
+#### Protocol Commuication Diagram
+
 
 
 ## Contact
