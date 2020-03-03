@@ -25,9 +25,18 @@ The Protocol is based on an API framework which gives it protablibity to interfa
 <br/>
 
 ##### The Protocol Framework Consists of three parts :-
-1 Pre implemented Server and Client State Machines
-2 Network and Protocol Layer if users want to develop their own state machine
-3 Network operations 
+1. Pre implemented Server and Client State Machines
+2. Network and Protocol Layer if users want to develop their own state machine
+3. Network operations interface for link hardware dependent functions to API, through wrapper functions.
+
+
+### Protocol Messages
+
+1. JOINREQ Message (Join Request Message, send by the client to the server)
+2. JOINRESP Message (Join Response Message, send by the Server to the client)
+3. STATUS Message (Status Message, send by the client to the server)
+4. CONTRL Message (Control Message, send by the server in response to status message, to the destination device)
+5. STASUACK Message (Status Message Acknowledgment message, if quality of service is configured)
 
 
 ## Contact
