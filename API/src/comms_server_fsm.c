@@ -44,7 +44,7 @@
 /*
  * Standard Header and API Header files
  */
-#include "comms_server_fsm.h"
+#include <WI_API/inc/comms_server_fsm.h>
 
 
 
@@ -225,8 +225,11 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
             case WI_GATEWAY_SERVER:
 
-                /* Set network message flag read and network message in gateway mode */
-                network_buffers->application_flags.network_message_ready = 1;
+                /* Temporary */
+                /* Set timer to broadcast slot */
+                comms_network_set_timer(wireless_network, server_device, NET_BROADCAST_SLOT);
+
+                fsm_state = JOINRESP_STATE;
 
                 break;
 
@@ -294,21 +297,18 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
         /* get destination client and payload from status */
         status_message_length = comms_get_status_message(server, *server_device, status_message_buffer,
-                                 &source_client_id, &destination_client_id);
+                                                         &source_client_id, &destination_client_id);
 
         if(server_mode == WI_LOCAL_SERVER)
         {
             /* handle server message condition (not done) */
             if(destination_client_id == 1)
             {
-                /* calibrate timer to broadcast message */
-
                 fsm_state = CONTROLMSG_STATE;
-
             }
             else
             {
-                /* search table for */
+                /* search table for destination device */
                 device_found = find_client_device(client_devices, &destination_client_id, client_mac_address, 1);
 
                 /* Check device found condition */
@@ -323,6 +323,26 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
             }
 
         }
+        else if(server_mode == WI_GATEWAY_SERVER)
+        {
+            if(destination_client_id == 1)
+            {
+                /* search table for source device */
+                device_found = find_client_device(client_devices, &source_client_id, client_mac_address, 1);
+
+                if(device_found)
+                {
+                    strncpy(network_buffers->network_message, status_message_buffer, strlen(status_message_buffer));
+
+                    network_buffers->application_flags.network_message_ready = 1;
+
+                    memset(status_message_buffer, 0, sizeof(status_message_buffer));
+                }
+            }
+
+            fsm_state = SYNC_STATE;
+
+        }
         else
         {
             fsm_state = SYNC_STATE;
@@ -331,7 +351,6 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         memset(network_buffers->read_message, 0, sizeof(network_buffers->read_message));
 
         network_buffers->flag_state = CLEAR_FLAG;
-
 
         break;
 

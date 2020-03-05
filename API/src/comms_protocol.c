@@ -51,8 +51,8 @@
 #include <stdlib.h>
 
 
-#include "comms_protocol.h"
-#include "network_protocol_configs.h"
+#include <WI_API/inc/comms_protocol.h>
+#include <WI_API/inc/network_protocol_configs.h>
 
 
 
@@ -726,9 +726,10 @@ int16_t comms_get_status_message(protocol_handle_t server, device_config_t serve
 uint8_t comms_control_message(protocol_handle_t *server, device_config_t device, uint8_t source_id,
                               uint8_t destination_id, const char *payload, uint16_t payload_length)
 {
-    uint8_t func_retval    = 0;
-    uint8_t payload_index  = 0;
-    uint8_t message_length = 0;
+    uint8_t func_retval      = 0;
+    uint8_t payload_index    = 0;
+    uint8_t message_length   = 0;
+    uint8_t payload_length_2 = 0;
 
     char *copy_payload;
 
@@ -765,8 +766,26 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
 
         /* add NOT FOUND condition to payload */
         payload_length = 16;
-        memcpy(copy_payload, "DEVICE NOT FOUND", payload_length);
 
+        memcpy(copy_payload, "DEVICE NOT FOUND", payload_length);
+    }
+    else if(destination_id == 1)
+    {
+        server->contrl_msg->fixed_header.message_status = CLIENT_ECHO;
+        server->contrl_msg->source_client_id            = device.device_slot_number;
+        server->contrl_msg->destination_client_id       = source_id;
+
+        /* Add ECHO condition to payload */
+        payload_length_2 = 7;
+
+        memcpy(copy_payload, "[Echo]:", payload_length_2);
+
+        payload_index = payload_length_2;
+
+        /* Add payload */
+        memcpy(copy_payload + payload_index, payload, payload_length);
+
+        payload_length += payload_length_2;
     }
     else
     {
