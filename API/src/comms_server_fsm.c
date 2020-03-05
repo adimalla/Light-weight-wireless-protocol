@@ -44,7 +44,7 @@
 /*
  * Standard Header and API Header files
  */
-#include <WI_API/inc/comms_server_fsm.h>
+#include <comms_server_fsm.h>
 
 
 

@@ -51,8 +51,8 @@
 #include <stdlib.h>
 
 
-#include <WI_API/inc/comms_protocol.h>
-#include <WI_API/inc/network_protocol_configs.h>
+#include <comms_protocol.h>
+#include <network_protocol_configs.h>
 
 
 

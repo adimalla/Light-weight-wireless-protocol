@@ -214,7 +214,7 @@ void wTimer5Isr(void)
     client_device = create_client_device("10:20:14:15:16:17", REQUESTED_SLOTS, user_name, password);
 
     /* Init client state machine */
-    comms_start_client(wireless_network, client_device, &read_buffer, 5);
+    comms_start_client(wireless_network, client_device, &read_buffer, 1);
 }
 
 
