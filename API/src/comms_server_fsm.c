@@ -164,8 +164,13 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         /* clear flag */
         network_buffers->flag_state = CLEAR_FLAG;
 
-        break;
+        /* Check Queue */
+        if(network_buffers->queue_pos > 0)
+        {
+            fsm_state = STATUSMSG_STATE;
+        }
 
+        break;
 
 
     case SYNC_STATE:
@@ -181,15 +186,6 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         comms_send(wireless_network, (char*)wireless_network->sync_message, message_length);
 
         fsm_state = MSG_READ_STATE;
-
-        /* Not implemented */
-        if(contrl_flag)
-        {
-            /* Set timer */
-
-            fsm_state = CONTROLMSG_STATE;
-
-        }
 
         break;
 
@@ -243,14 +239,11 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
             fsm_state = SYNC_STATE;
         }
 
-
         network_buffers->flag_state = CLEAR_FLAG;
 
         memset(network_buffers->read_message, 0, sizeof(network_buffers->read_message));
 
-
         break;
-
 
 
     case JOINRESP_STATE:
@@ -259,7 +252,6 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         comms_send_status(wireless_network);
 
         /* send join response at broadcast slot and reset to updated slot */
-
         memset(send_message_buffer, 0, sizeof(send_message_buffer));
 
         server.joinresponse_msg = (void*)send_message_buffer;
@@ -284,71 +276,74 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         break;
 
 
-
     case STATUSMSG_STATE:
-
 
         /* Activity, Status LED function for receiving messages, access via user callback */
         comms_recv_status(wireless_network);
 
-
         /* Read Status message and send control message to the destination device */
-        server.status_msg = (void*)network_buffers->read_message;
+        server.status_msg = (void*)network_buffers->network_queue[network_buffers->queue_pos - 1].data;
+
+        memset(status_message_buffer, 0, sizeof(status_message_buffer));
 
         /* get destination client and payload from status */
         status_message_length = comms_get_status_message(server, *server_device, status_message_buffer,
                                                          &source_client_id, &destination_client_id);
 
+        memset(network_buffers->network_queue[network_buffers->queue_pos - 1].data, 0,
+               sizeof(network_buffers->network_queue[network_buffers->queue_pos - 1].data));
+
+        network_buffers->queue_pos--;
+
         if(server_mode == WI_LOCAL_SERVER)
         {
-            /* handle server message condition (not done) */
-            if(destination_client_id == 1)
+
+            /* search table for destination device */
+            device_found = find_client_device(client_devices, &destination_client_id, client_mac_address, FIND_BY_ID);
+
+            /* Check device found condition */
+            if(device_found == 0)
+                destination_client_id = device_found;
+
+            /* Set timer to broadcast slot */
+            comms_network_set_timer(wireless_network, server_device, NET_BROADCAST_SLOT);
+
+            fsm_state = CONTROLMSG_STATE;
+
+
+        }
+        else if(server_mode == WI_GATEWAY_SERVER && destination_client_id == 1)
+        {
+            /* search table for source device */
+            device_found = find_client_device(client_devices, &source_client_id, client_mac_address, FIND_BY_ID);
+
+            if(device_found && network_buffers->application_flags.gateway_connected == 1)
             {
-                fsm_state = CONTROLMSG_STATE;
+                strncpy(network_buffers->network_message, status_message_buffer, status_message_length);
+
+                network_buffers->application_flags.network_message_ready = 1;
+
+                fsm_state = SYNC_STATE;
+
+                /* Check Queue */
+                if(network_buffers->queue_pos > 0)
+                {
+                    fsm_state = STATUSMSG_STATE;
+                }
+
             }
             else
             {
-                /* search table for destination device */
-                device_found = find_client_device(client_devices, &destination_client_id, client_mac_address, 1);
-
-                /* Check device found condition */
-                if(device_found == 0)
-                    destination_client_id = device_found;
-
                 /* Set timer to broadcast slot */
                 comms_network_set_timer(wireless_network, server_device, NET_BROADCAST_SLOT);
 
                 fsm_state = CONTROLMSG_STATE;
-
             }
-
-        }
-        else if(server_mode == WI_GATEWAY_SERVER)
-        {
-            if(destination_client_id == 1)
-            {
-                /* search table for source device */
-                device_found = find_client_device(client_devices, &source_client_id, client_mac_address, 1);
-
-                if(device_found)
-                {
-                    strncpy(network_buffers->network_message, status_message_buffer, strlen(status_message_buffer));
-
-                    network_buffers->application_flags.network_message_ready = 1;
-
-                    memset(status_message_buffer, 0, sizeof(status_message_buffer));
-                }
-            }
-
-            fsm_state = SYNC_STATE;
-
         }
         else
         {
             fsm_state = SYNC_STATE;
         }
-
-        memset(network_buffers->read_message, 0, sizeof(network_buffers->read_message));
 
         network_buffers->flag_state = CLEAR_FLAG;
 
@@ -372,9 +367,7 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
         break;
 
 
-
     case CONTROLMSG_STATE:
-
 
         /* Activity, Status LED function for sending messages, access via user callback */
         comms_send_status(wireless_network);
@@ -383,25 +376,56 @@ int8_t comms_start_server(access_control_t *wireless_network, device_config_t *s
 
         server.contrl_msg = (void*)send_message_buffer;
 
-        /* echo condition (compare ID gotten from status message with ID gotten from device table )*/
+        if(server_mode == WI_LOCAL_SERVER)
+        {
+            message_length = comms_control_message(&server, *server_device, source_client_id, destination_client_id,
+                                                   status_message_buffer, status_message_length);
 
-        message_length = comms_control_message(&server, *server_device, source_client_id, destination_client_id,
-                                               status_message_buffer, status_message_length);
+            /* Send CONTRL message */
+            comms_send(wireless_network, (char*)server.contrl_msg, message_length);
 
-        comms_send(wireless_network, (char*)server.contrl_msg, message_length);
+            /* set timer to sync slot after sending CONTRL message */
+            comms_network_set_timer(wireless_network, server_device, NET_SYNC_SLOT);
 
-        /* set timer to sync slot after sending CONTRL message */
-        comms_network_set_timer(wireless_network, server_device, NET_SYNC_SLOT);
+        }
+        else if(server_mode == WI_GATEWAY_SERVER)
+        {
+
+            if(network_buffers->application_flags.gateway_connected == 1)
+            {
+                /* Handle messages from IP server */
+
+            }
+            else
+            {
+                /* Handle gateway offline message */
+                destination_client_id = source_client_id;
+                source_client_id      = server_device->device_slot_number;
+
+                memset(status_message_buffer, 0, sizeof(status_message_buffer));
+
+                status_message_length = 15;
+                strncpy(status_message_buffer, "Gateway Offline", status_message_length);
+
+                message_length = comms_control_message(&server, *server_device, source_client_id, destination_client_id,
+                                                       status_message_buffer, status_message_length);
+                /* Send CONTRL message */
+                comms_send(wireless_network, (char*)server.contrl_msg, message_length);
+            }
+        }
 
         /* set flags and parameters to init values */
-        contrl_flag           = 0;
         device_found          = 0;
         source_client_id      = 0;
         destination_client_id = 0;
 
-        memset(status_message_buffer, 0, sizeof(status_message_buffer));
-
         fsm_state = SYNC_STATE;
+
+        /* Check Queue */
+        if(network_buffers->queue_pos > 0)
+        {
+            fsm_state = STATUSMSG_STATE;
+        }
 
         break;
 

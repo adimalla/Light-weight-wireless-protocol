@@ -59,7 +59,7 @@
 /******************************************************************************/
 
 
-#define CLIENT_TABLE_SIZE 5
+#define CLIENT_TABLE_SIZE 20
 
 
 /* table return values structure */
@@ -93,6 +93,13 @@ typedef struct _client_devices
 
 }client_devices_t;
 
+
+typedef enum _table_search_type
+{
+    FIND_BY_ID  = 1,
+    FIND_BY_MAC = 2,
+
+}search_type_t;
 
 
 

@@ -50,7 +50,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "comms_network.h"
+#include <comms_network.h>
 
 
 
@@ -593,22 +593,18 @@ int8_t comms_send(access_control_t *network, char *message_buffer, uint16_t mess
 int8_t comms_server_recv_it(access_control_t *network,comms_network_buffer_t *recv_buffer, uint8_t *read_index)
 {
 
-    int8_t func_retval =  0;
-
-    uint8_t checksum = 0;
+    int8_t  func_retval = 0;
+    uint8_t checksum   = 0;
 
     /* Terminate the message on the message termination characters */
-    if(recv_buffer->receive_message[*read_index] == 't' && recv_buffer->receive_message[*read_index - 1] == '\r')
+    if(recv_buffer->read_message[*read_index] == 't' && recv_buffer->read_message[*read_index - 1] == '\r')
     {
-
         network->network_commands->clear_recv_interrupt();
 
-        network->packet_type = (void*)recv_buffer->receive_message;
+        network->packet_type = (void*)recv_buffer->read_message;
 
         /* Validate checksum, Length of fixed header + preamble = 5 */
-        checksum = comms_network_checksum((char*)recv_buffer->receive_message, 5, *read_index + 1);
-
-        *read_index = 0;
+        checksum = comms_network_checksum((char*)recv_buffer->read_message, 5, *read_index + 1);
 
         if(network->packet_type->fixed_header.message_checksum == checksum)
         {
@@ -617,29 +613,27 @@ int8_t comms_server_recv_it(access_control_t *network,comms_network_buffer_t *re
             /* Manage Network Access */
             if(network->packet_type->fixed_header.message_type < 10)
             {
-
                 if(network->packet_type->fixed_header.message_type == COMMS_JOINREQ_MESSAGE)
                 {
-                    recv_buffer->flag_state = JOINREQ_FLAG;
 
+                    recv_buffer->flag_state = JOINREQ_FLAG;
                 }
 
                 if(network->packet_type->fixed_header.message_type == COMMS_STATUS_MESSAGE)
                 {
-                    recv_buffer->flag_state = STATUSMSG_FLAG;
+                    if(recv_buffer->queue_pos < 5)
+                    {
+                        memcpy(recv_buffer->network_queue[recv_buffer->queue_pos].data, recv_buffer->read_message, *read_index);
 
+                        recv_buffer->queue_pos++;
+
+                        recv_buffer->flag_state = STATUSMSG_FLAG;
+
+                        memset(recv_buffer->read_message, 0, sizeof(recv_buffer->read_message));
+                    }
                 }
-
-                /* Copy data to read buffer  */
-                memset(recv_buffer->read_message, 0, sizeof(recv_buffer->read_message));
-                memcpy(recv_buffer->read_message, recv_buffer->receive_message, network->packet_type->fixed_header.message_length + \
-                       NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
-
             }
         }
-
-        /* Clear receive buffer */
-        memset(recv_buffer->receive_message, 0, sizeof(recv_buffer->receive_message));
 
         *read_index = 0;
     }
@@ -671,21 +665,20 @@ int8_t comms_client_recv_it(access_control_t *network, comms_network_buffer_t *r
 
     uint8_t checksum = 0;
 
-    if(recv_buffer->receive_message[*read_index] == 't' && recv_buffer->receive_message[*read_index - 1] == '\r')
+    if(recv_buffer->read_message[*read_index] == 't' && recv_buffer->read_message[*read_index - 1] == '\r')
     {
 
         network->network_commands->clear_recv_interrupt();
 
-        network->packet_type = (void*)recv_buffer->receive_message;
+        network->packet_type = (void*)recv_buffer->read_message;
 
         /* Validate checksum */
-        checksum = comms_network_checksum((char*)recv_buffer->receive_message, 5, network->packet_type->fixed_header.message_length + 5);
+        checksum = comms_network_checksum((char*)recv_buffer->read_message, 5, network->packet_type->fixed_header.message_length + 5);
 
         *read_index = 0;
 
         if(network->packet_type->fixed_header.message_checksum == checksum)
         {
-
             checksum = 0;
 
             switch(network->packet_type->fixed_header.message_type)
@@ -695,15 +688,8 @@ int8_t comms_client_recv_it(access_control_t *network, comms_network_buffer_t *r
 
                 recv_buffer->flag_state = SYNC_FLAG;
 
-
                 /* reset timer */
                 network->network_commands->reset_tx_timer();
-
-
-                /* Copy data to read buffer  */
-                memset(recv_buffer->read_message, 0, sizeof(recv_buffer->read_message));
-                memcpy(recv_buffer->read_message, recv_buffer->receive_message, network->packet_type->fixed_header.message_length + \
-                       NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
 
                 break;
 
@@ -711,22 +697,11 @@ int8_t comms_client_recv_it(access_control_t *network, comms_network_buffer_t *r
 
                 recv_buffer->flag_state = JOINRESP_FLAG;
 
-                /* Copy data to read buffer  */
-                memset(recv_buffer->read_message, 0, sizeof(recv_buffer->read_message));
-                memcpy(recv_buffer->read_message, recv_buffer->receive_message, network->packet_type->fixed_header.message_length + \
-                       NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
-
-
                 break;
 
             case CONTRLMSG_FLAG:
 
                 recv_buffer->flag_state = CONTRLMSG_FLAG;
-
-                /* Copy data to read buffer  */
-                memset(recv_buffer->read_message, 0, sizeof(recv_buffer->read_message));
-                memcpy(recv_buffer->read_message, recv_buffer->receive_message, network->packet_type->fixed_header.message_length + \
-                       NET_PREAMBLE_LENTH + COMMS_FIXED_HEADER_LENGTH);
 
                 break;
 
@@ -737,9 +712,6 @@ int8_t comms_client_recv_it(access_control_t *network, comms_network_buffer_t *r
             }
 
         }
-
-        /* Clear receive buffer */
-        memset(recv_buffer->receive_message, 0, sizeof(recv_buffer->receive_message));
 
     }
     else
@@ -768,11 +740,11 @@ int8_t send_application_message(comms_network_buffer_t *network_buffer, char *us
 
     if(network_buffer->application_flags.network_joined_state == 0)
     {
-        func_retval = -1;
+        func_retval = 0;
     }
     else if(message_length >= NET_DATA_LENGTH - COMMS_TERMINATOR_LENGTH)
     {
-        func_retval = -2;
+        func_retval = -1;
     }
     else
     {

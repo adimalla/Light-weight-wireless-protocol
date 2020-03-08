@@ -127,24 +127,34 @@ typedef struct _application_flags
     uint8_t network_joined_state      : 1;  /*!< Network joined state, client controlled               */
     uint8_t application_message_ready : 1;  /*!< App message ready flag, user enabled                  */
     uint8_t network_message_ready     : 1;  /*!< Network message ready flag, client/ server controlled */
-    uint8_t reserved;
+    uint8_t gateway_connected         : 1;  /*!< Connection state of gateway to the server             */
+    uint8_t reserved                  : 2;
 
 }app_flags_t;
 
+
+typedef struct network_queue
+{
+    char data[NET_DATA_LENGTH];
+
+}net_queue_t;
 
 
 /* Network buffer structure for message passing between network and user applications */
 typedef struct _comms_network_buffer
 {
     app_flags_t     application_flags;                     /*!< Application flag state structure                          */
-    char            receive_message[NET_DATA_LENGTH];      /*!< Receive message buffer all messages                       */
     char            read_message[NET_DATA_LENGTH];         /*!< Read message buffer for valid messages, filled by network */
     char            application_message[NET_DATA_LENGTH];  /*!< Application message buffer, filled by application         */
     char            network_message[NET_DATA_LENGTH];      /*!< Network message buffer, filled by network                 */
     uint16_t        app_message_length;                    /*!< Application message length                                */
+    uint16_t        net_message_length;                    /*!< Network message length                                    */
     message_flags_t flag_state;                            /*!< Network message flag states                               */
     uint8_t         source_id;                             /*!< Network message source ID                                 */
     uint8_t         destination_id;                        /*!< Network Message destination ID                            */
+
+    net_queue_t     network_queue[4];
+    uint16_t        queue_pos;
 
 }comms_network_buffer_t;
 

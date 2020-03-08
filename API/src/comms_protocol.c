@@ -51,8 +51,8 @@
 #include <stdlib.h>
 
 
-#include <comms_protocol.h>
-#include <network_protocol_configs.h>
+#include "comms_protocol.h"
+#include "network_protocol_configs.h"
 
 
 
@@ -769,6 +769,7 @@ uint8_t comms_control_message(protocol_handle_t *server, device_config_t device,
 
         memcpy(copy_payload, "DEVICE NOT FOUND", payload_length);
     }
+    /* Client echo condition */
     else if(destination_id == 1)
     {
         server->contrl_msg->fixed_header.message_status = CLIENT_ECHO;

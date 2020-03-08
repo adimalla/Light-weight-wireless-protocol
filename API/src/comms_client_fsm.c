@@ -45,7 +45,7 @@
 /*
  * Standard Header and API Header files
  */
-#include "comms_client_fsm.h"
+#include <comms_client_fsm.h>
 
 
 /******************************************************************************/
@@ -140,6 +140,7 @@ int8_t comms_start_client(access_control_t *wireless_network, device_config_t *c
             network_buffers->flag_state = CLEAR_FLAG;
         }
 
+
         break;
 
 
@@ -227,6 +228,8 @@ int8_t comms_start_client(access_control_t *wireless_network, device_config_t *c
         if(network_buffers->flag_state == SYNC_FLAG)
         {
             comms_net_connected_status(wireless_network);
+
+
         }
 
 
@@ -275,6 +278,8 @@ int8_t comms_start_client(access_control_t *wireless_network, device_config_t *c
                 comms_contrl_debug_print(wireless_network, "CONTROL", network_buffers->source_id, network_buffers->network_message);
 
             }
+
+            memset(network_buffers->read_message, 0, sizeof(network_buffers->read_message));
 
         }
 

@@ -187,7 +187,7 @@ void uart1ISR(void)
 
     char c = UART1_DR_R & 0xFF;
 
-    read_buffer.receive_message[rx_index] = c;
+    read_buffer.read_message[rx_index] = c;
 
     comms_client_recv_it(network, &read_buffer, &rx_index);
 

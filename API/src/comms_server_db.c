@@ -240,7 +240,7 @@ int8_t find_client_device(client_devices_t *device_table, uint8_t *client_id, ch
     {
 
         /* Search by client id */
-        if(search_mode == 1)
+        if(search_mode == FIND_BY_ID)
         {
             if(device_table[index].client_id == *client_id)
             {
@@ -257,7 +257,7 @@ int8_t find_client_device(client_devices_t *device_table, uint8_t *client_id, ch
 
         }
         /* Search my mac-address */
-        else if(search_mode == 2)
+        else if(search_mode == FIND_BY_MAC)
         {
             if(strncmp(device_table[index].client_mac, client_mac_address, 6) == 0)
             {
