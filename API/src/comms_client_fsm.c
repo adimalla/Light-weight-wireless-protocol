@@ -140,7 +140,6 @@ int8_t comms_start_client(access_control_t *wireless_network, device_config_t *c
             network_buffers->flag_state = CLEAR_FLAG;
         }
 
-
         break;
 
 

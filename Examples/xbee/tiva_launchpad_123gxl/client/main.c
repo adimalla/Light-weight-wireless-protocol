@@ -91,12 +91,12 @@
 /******************************************************************************/
 
 
- /* Initialize network buffer instance */
+/* Initialize network buffer instance */
 comms_network_buffer_t read_buffer;
 
 
 /* Initialize Console Instance */
- cl_term_t *console;
+cl_term_t *console;
 
 
 
@@ -108,52 +108,52 @@ comms_network_buffer_t read_buffer;
 /******************************************************************************/
 
 
- int8_t debug_print(char *message)
- {
-     console_print(console, message);
+int8_t debug_print(char *message)
+{
+    console_print(console, message);
 
-     return 0;
- }
-
-
-
- int8_t clear_uart_recv_interrupt(void)
- {
-     /* Clear UART interrupt */
-     UART1_ICR_R |= (1 << 4);
-
-     return 0;
- }
+    return 0;
+}
 
 
 
+int8_t clear_uart_recv_interrupt(void)
+{
+    /* Clear UART interrupt */
+    UART1_ICR_R |= (1 << 4);
 
- /* Link Protocol functions */
- network_operations_t net_ops =
- {
-  .reset_tx_timer       = rst_timer,
-  .clear_recv_interrupt = clear_uart_recv_interrupt,
-  .send_message         = xbee_send,
-  .set_tx_timer         = set_tx_timer,
-  .sync_activity_status = sync_led_status,
-  .recv_activity_status = recv_led_status,
-  .send_activity_status = send_led_status,
-  .clear_status         = clear_led_status,
-  .net_connected_status = net_join_status,
-  .net_debug_print      = debug_print,
- };
+    return 0;
+}
 
 
 
- /* Link console functions */
- console_ops_t serial_ops =
- {
 
-  .open       = serial_open,
-  .print_char = write_char,
-  .read_char  = read_char,
+/* Link Protocol functions */
+network_operations_t net_ops =
+{
+ .reset_tx_timer       = rst_timer,
+ .clear_recv_interrupt = clear_uart_recv_interrupt,
+ .send_message         = xbee_send,
+ .set_tx_timer         = set_tx_timer,
+ .sync_activity_status = sync_led_status,
+ .recv_activity_status = recv_led_status,
+ .send_activity_status = send_led_status,
+ .clear_status         = clear_led_status,
+ .net_connected_status = net_join_status,
+ .net_debug_print      = debug_print,
+};
 
- };
+
+
+/* Link console functions */
+console_ops_t serial_ops =
+{
+
+ .open       = serial_open,
+ .print_char = write_char,
+ .read_char  = read_char,
+
+};
 
 
 /******************************************************************************/
@@ -211,7 +211,7 @@ void wTimer5Isr(void)
     char user_name[10]   = "sens_net";
     uint8_t password[10] = "1234";
 
-    client_device = create_client_device("10:20:14:15:16:17", REQUESTED_SLOTS, user_name, password);
+    client_device = create_client_device("20:20:14:15:16:17", REQUESTED_SLOTS, user_name, password);
 
     /* Init client state machine */
     comms_start_client(wireless_network, client_device, &read_buffer, 1);
@@ -227,6 +227,7 @@ int main(void)
     uint8_t loop         = 0;
     uint8_t input_length = 0;
     int8_t  retval       = 0;
+    uint8_t count        = 0;
 
     char text_buffer[NET_DATA_LENGTH] = {0};
 

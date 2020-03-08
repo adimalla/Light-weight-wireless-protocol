@@ -768,11 +768,11 @@ int8_t send_application_message(comms_network_buffer_t *network_buffer, char *us
 
     if(network_buffer->application_flags.network_joined_state == 0)
     {
-        func_retval = 0;
+        func_retval = -1;
     }
     else if(message_length >= NET_DATA_LENGTH - COMMS_TERMINATOR_LENGTH)
     {
-        func_retval = -1;
+        func_retval = -2;
     }
     else
     {
