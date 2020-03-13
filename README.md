@@ -7,7 +7,7 @@
 
 ## Info
 This is a custom low bandwidth, low overhead light weight wireless protocol developed as a part of EE6314 project course work.
-The Intitial design requirements were given by (Proff.) Dr.Jason Losh and later the protocol was modified to include a minimal API framework with authentication and Async State machine runing in timer interrupt service routine which can interract with user application using shared buffers and post debug information on serial terminal. The protocol also implements extended features such as Quality of Service and Message Queing.
+The Intitial design requirements were given by (Prof.) Dr.Jason Losh and later the protocol was modified to include a minimal API framework with single factor authentication and async state machine runing in timer interrupt service routine which can interract with user application using shared buffers and post debug information on serial terminal. The protocol also implements extended features such as Quality of Service and Message Queing.
 
 The Protocol is based on an API framework which gives it protablibity to interface with any transceiver PHY module workiing on any serial protocol. 
 
@@ -24,7 +24,7 @@ The Protocol is based on an API framework which gives it protablibity to interfa
 <img src="https://github.com/adimalla/Light-weight-wireless-protocol/blob/master/docs/images/Selection_337.jpg" width="900" height="800" title="Layer Architecture">
 
 ### Protocol Messages
-1. SYNC Message (Synchronization Message, Broadcast Message send by the sever to synchronize client timers and give network
+1. SYNC Message (Synchronization Message, Broadcast Message send by the server to synchronize client timers and give network
                  information)
 2. JOINREQ Message (Join Request Message, send by the client to the server)
 3. JOINRESP Message (Join Response Message, send by the Server to the client)
