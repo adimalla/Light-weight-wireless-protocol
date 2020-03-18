@@ -6,10 +6,9 @@
 ###### Please take prior permisson from Dr Jason.Losh and respective owners if you wish to use it in your Academic Project, if you happen to be a student at The University of Texas at Arlington.
 
 ## Info
-This is a custom low bandwidth, low overhead light weight wireless protocol developed as a part of EE6314 project course work.
-The Intitial design requirements were given by (Prof.) Dr.Jason Losh and later the protocol was modified to include a minimal API framework with single factor authentication and async state machine runing in timer interrupt service routine which can interract with user application using shared buffers and post debug information on serial terminal. The protocol also implements extended features such as Quality of Service and Message Queing.
+This is a custom low bandwidth, low overhead light weight wireless protocol developed as a part of EE6314 project course work. The Initial design requirements were given by (Prof.) Dr.Jason Losh and later the protocol was modified to include a minimal API framework with single factor authentication and async state machine ruining in timer interrupt service routine which can interact with user application using shared buffers and post debug information on serial terminal. The protocol also implements extended features such as Quality of Service and Message Queuing.
 
-The Protocol is based on an API framework which gives it protablibity to interface with any transceiver PHY module workiing on any serial protocol. 
+The Protocol is based on an API framework which makes it portable to interface with any transceiver PHY module working on any serial protocol.
 
 ## Goal
 * To implement a light weight wireless protocol for low power sensor devices in a low bandwidth network.
